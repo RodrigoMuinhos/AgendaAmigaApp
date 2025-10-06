@@ -3,19 +3,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-// ✅ Configuração otimizada para Vercel + Monorepo
 export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    fs: { allow: ['..'] } // <- permite importar de fora de apps/frontend
   },
-  plugins: [
-    react(),
-    tsconfigPaths(), // lê os aliases direto do tsconfig.json
-  ],
+  plugins: [react(), tsconfigPaths()],
   resolve: {
     alias: {
-      // acessa o pacote compartilhado entre frontend e backend
       "@agenda-amiga/shared": path.resolve(__dirname, "../../packages/shared/src"),
     },
   },
@@ -24,4 +20,8 @@ export default defineConfig({
     sourcemap: false,
     emptyOutDir: true,
   },
+  optimizeDeps: {
+    // Ajuda o Vite a não tentar otimizar algo do monorepo como pacote externo
+    exclude: ["@agenda-amiga/shared"]
+  }
 });
