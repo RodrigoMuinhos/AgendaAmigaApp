@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  api:
+    build:
+      context: .
+      target: development
+    container_name: agenda-amiga-api-dev
+    environment:
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    command: npm run dev:api
+    volumes:
+      - .:/app
+      - agenda_amiga_node_modules:/app/node_modules
+      - agenda_amiga_api_node_modules:/app/apps/api/node_modules
+      - agenda_amiga_shared_node_modules:/app/packages/shared/node_modules
+volumes:
+  agenda_amiga_node_modules:
+  agenda_amiga_api_node_modules:
+  agenda_amiga_shared_node_modules:

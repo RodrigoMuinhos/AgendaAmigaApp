@@ -1,0 +1,28 @@
+{
+    "name": "agenda-amiga",
+    "version": "0.1.0",
+    "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "devDependencies": {
+        "concurrently": "^9.2.1",
+        "tsx": "^4.20.6"
+    },
+    "scripts": {
+        "build": "npm run build -w @agenda-amiga/shared && npm run build -w @agenda-amiga/api",
+        "dev:api": "npm run dev -w @agenda-amiga/api",
+        "start:api": "npm run start -w @agenda-amiga/api",
+        "build:shared": "npm run build -w @agenda-amiga/shared",
+        "shared:dev": "npm run dev -w @agenda-amiga/shared",
+        "api:dev": "npm run dev -w @agenda-amiga/api",
+        "web:dev": "npm run dev -w @agenda-amiga/frontend",
+        "web:dev:lan": "npm run dev:lan -w @agenda-amiga/frontend",
+        "web:preview:lan": "npm run preview:lan -w @agenda-amiga/frontend"
+    },
+    "dependencies": {
+        "axios": "^1.12.2",
+        "lucide-react": "^0.544.0"
+    }
+}
