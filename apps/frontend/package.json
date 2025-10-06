@@ -1,33 +1,35 @@
 {
-    "name":  "@agenda-amiga/frontend",
-    "version":  "0.1.0",
-    "private":  true,
-    "type":  "module",
-    "scripts":  {
-                    "dev":  "vite",
-                    "build":  "tsc -p tsconfig.json \u0026\u0026 vite build",
-                    "preview":  "vite preview",
-                    "dev:lan":  "vite --host 0.0.0.0 --port 5173",
-                    "preview:lan":  "vite preview --host 0.0.0.0 --port 4173"
-                },
-    "dependencies":  {
-                         "@tanstack/react-query":  "^5.59.8",
-                         "axios":  "^1.7.7",
-                         "react":  "^18.2.0",
-                         "react-dom":  "^18.2.0",
-                         "react-router-dom":  "^6.28.0",
-                         "react-hook-form":  "^7.53.0",
-                         "@hookform/resolvers":  "^3.9.0",
-                         "zod":  "^3.23.8"
-                     },
-    "devDependencies":  {
-                            "@types/react":  "^18.2.20",
-                            "@types/react-dom":  "^18.2.7",
-                            "@vitejs/plugin-react":  "^4.2.0",
-                            "autoprefixer":  "^10.4.18",
-                            "postcss":  "^8.4.41",
-                            "tailwindcss":  "^3.4.14",
-                            "typescript":  "^5.3.3",
-                            "vite":  "^7.1.9"
-                        }
+  "name": "@agenda-amiga/frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "preview": "vite preview",
+    "dev:lan": "vite --host 0.0.0.0 --port 5173",
+    "preview:lan": "vite preview --host 0.0.0.0 --port 4173"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.0",
+    "@tanstack/react-query": "^5.59.8",
+    "axios": "^1.7.7",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.53.0",
+    "react-router-dom": "^6.28.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.20",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.18",
+    "postcss": "^8.4.41",
+    "tailwindcss": "^3.4.14",
+    "typescript": "^5.3.3",
+    "vite": "^7.1.9",
+    "vite-tsconfig-paths": "^4.3.2"
+  }
 }
