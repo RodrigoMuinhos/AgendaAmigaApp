@@ -75,7 +75,7 @@ export type ChildProfileCreateDTO = {
     uf?: string;
     cep?: string;
   };
-  contatos?: { principal?: string; extra?: string; email?: string };
+  contatos: { telefonePrincipal: string; telefoneExtra?: string; email?: string };
   alergias?: { nome: string; gravidade: Gravidade }[];
   condicoes?: string[];
   medicacoesAtuais?: Medicacao[];

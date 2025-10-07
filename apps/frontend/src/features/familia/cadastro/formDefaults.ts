@@ -1,5 +1,6 @@
 ﻿import type { ChildProfileCreateDTO } from "./types";
 import type { ChildProfileFormValues } from "./schema";
+import { SAVE_AS_E164 } from "./schema";
 
 export const defaultProfileValues: ChildProfileFormValues = {
   avatarUrl: undefined,
@@ -20,7 +21,7 @@ export const defaultProfileValues: ChildProfileFormValues = {
     uf: undefined,
     cep: undefined,
   },
-  contatos: { principal: undefined, extra: undefined, email: undefined },
+  contatos: { telefonePrincipal: "", telefoneExtra: "", email: undefined },
   alergias: [],
   condicoes: [],
   medicacoesAtuais: [],
@@ -77,6 +78,29 @@ export const mapFormToDto = (values: ChildProfileFormValues): ChildProfileCreate
   const terapias = (values.terapias ?? []).filter((item) => item.tipo.trim().length > 0);
   const atividades = (values.atividades ?? []).filter((item) => item.nome.trim().length > 0);
 
+  const formatPhoneForDto = (phone?: string) => {
+    if (!phone) {
+      return undefined;
+    }
+    if (SAVE_AS_E164) {
+      return phone;
+    }
+    if (phone.startsWith("+55")) {
+      return phone;
+    }
+    const digitsOnly = phone.replace(/\D/g, "");
+    if (!digitsOnly) {
+      return undefined;
+    }
+    return "+55" + digitsOnly;
+  };
+
+  const contatos = {
+    telefonePrincipal: formatPhoneForDto(values.contatos.telefonePrincipal)!,
+    telefoneExtra: formatPhoneForDto(values.contatos.telefoneExtra),
+    email: values.contatos.email,
+  };
+
   return {
     avatarUrl: values.avatarUrl,
     nomeCompleto: values.nomeCompleto,
@@ -88,7 +112,7 @@ export const mapFormToDto = (values: ChildProfileFormValues): ChildProfileCreate
     tipoSanguineo: values.tipoSanguineo,
     naturalidade: values.naturalidade,
     endereco: values.endereco,
-    contatos: values.contatos,
+    contatos,
     alergias,
     condicoes,
     medicacoesAtuais: medicacoes,

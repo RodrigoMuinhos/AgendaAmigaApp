@@ -1,10 +1,37 @@
-﻿import { useMemo } from "react";
+﻿// apps/frontend/src/features/familia/cadastro/sections/MedicalInfo.tsx
+import { useMemo } from "react";
 import { useFieldArray, useFormContext } from "react-hook-form";
 import type { ChildProfileFormValues } from "../schema";
 import { cadastroStrings } from "../strings";
+import PhoneField from "../components/PhoneField";
 import { EmptyState, FormFieldWrapper, RemoveButton, SectionCard } from "./SectionHelpers";
 
-const condicoesOptions = ["Asma", "TEA", "TDAH", "Epilepsia", "Cardiopatias", "Outros"];
+const condicoesOptions = [
+  "TDAH (Transtorno de Déficit de Atenção e Hiperatividade)",
+  "Ansiedade",
+  "Distúrbios do sono",
+  "Epilepsia",
+  "Transtornos de linguagem ou fala",
+  "Atraso no desenvolvimento global",
+  "Distúrbios sensoriais",
+  "Transtornos alimentares (seletividade alimentar)",
+  "Problemas gastrointestinais (refluxo, constipação)",
+  "Alergia alimentar",
+  "Asma",
+  "Rinite alérgica",
+  "Dermatite atópica",
+  "Obesidade ou sobrepeso",
+  "Outros",
+];
+
+
+const calcIMC = (pesoKg?: number, alturaCm?: number) => {
+  if (!pesoKg || !alturaCm) return "";
+  const m = alturaCm / 100;
+  if (!m) return "";
+  const imc = pesoKg / (m * m);
+  return Number.isFinite(imc) ? imc.toFixed(1) : "";
+};
 
 export function MedicalInfoSection() {
   const { control, register, watch, formState } = useFormContext<ChildProfileFormValues>();
@@ -13,15 +40,13 @@ export function MedicalInfoSection() {
   const cirurgiasField = useFieldArray<ChildProfileFormValues, "cirurgiasInternacoes">({ control, name: "cirurgiasInternacoes" });
   const vacinasField = useFieldArray<ChildProfileFormValues, "vacinas">({ control, name: "vacinas" });
   const medidasField = useFieldArray<ChildProfileFormValues, "crescimento">({ control, name: "crescimento" });
+
   const medidas = watch("crescimento");
   const imcResumo = useMemo(() => {
     if (!medidas || medidas.length === 0) return null;
-    const ultima = medidas[medidas.length - 1];
-    if (!ultima?.pesoKg || !ultima?.alturaCm) return null;
-    const alturaMetros = ultima.alturaCm / 100;
-    if (!alturaMetros) return null;
-    const imc = ultima.pesoKg / (alturaMetros * alturaMetros);
-    return Number.isFinite(imc) ? cadastroStrings.medical.imcResumo(imc.toFixed(1)) : null;
+    const u = medidas[medidas.length - 1];
+    const imc = calcIMC(u?.pesoKg, u?.alturaCm);
+    return imc ? cadastroStrings.medical.imcResumo(imc) : null;
   }, [medidas]);
 
   return (
@@ -59,6 +84,7 @@ export function MedicalInfoSection() {
           </div>
         )}
       </SectionCard>
+
       <SectionCard title={cadastroStrings.medical.condicoesTitle}>
         <div className="grid gap-2 md:grid-cols-3">
           {condicoesOptions.map((condicao) => (
@@ -69,6 +95,7 @@ export function MedicalInfoSection() {
           ))}
         </div>
       </SectionCard>
+
       <SectionCard
         title={cadastroStrings.medical.medicacoesTitle}
         actionLabel={cadastroStrings.medical.addMedicacao}
@@ -107,7 +134,7 @@ export function MedicalInfoSection() {
                     className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                   />
                 </FormFieldWrapper>
-                <FormFieldWrapper label="Horário livre" error={formState.errors.medicacoesAtuais?.[index]?.horarioLivre?.message}>
+                <FormFieldWrapper label="Horário" error={formState.errors.medicacoesAtuais?.[index]?.horarioLivre?.message}>
                   <input
                     {...register(`medicacoesAtuais.${index}.horarioLivre` as const)}
                     className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
@@ -119,6 +146,7 @@ export function MedicalInfoSection() {
           </div>
         )}
       </SectionCard>
+
       <SectionCard
         title={cadastroStrings.medical.cirurgiasTitle}
         actionLabel={cadastroStrings.medical.addCirurgia}
@@ -159,6 +187,7 @@ export function MedicalInfoSection() {
           </div>
         )}
       </SectionCard>
+
       <SectionCard
         title={cadastroStrings.medical.vacinasTitle}
         actionLabel={cadastroStrings.medical.addVacina}
@@ -202,6 +231,7 @@ export function MedicalInfoSection() {
           </div>
         )}
       </SectionCard>
+
       <SectionCard
         title={cadastroStrings.medical.crescimentoTitle}
         actionLabel={cadastroStrings.medical.addMedida}
@@ -211,49 +241,68 @@ export function MedicalInfoSection() {
           <EmptyState label="Nenhuma medida registrada" />
         ) : (
           <div className="space-y-4">
-            {medidasField.fields.map((field, index) => (
-              <div key={field.id} className="grid gap-4 rounded-2xl border border-border/60 p-4 md:grid-cols-4">
-                <FormFieldWrapper label="Data" error={formState.errors.crescimento?.[index]?.data?.message}>
-                  <input
-                    {...register(`crescimento.${index}.data` as const)}
-                    type="date"
-                    className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                  />
-                </FormFieldWrapper>
-                <FormFieldWrapper label="Peso (kg)" error={formState.errors.crescimento?.[index]?.pesoKg?.message}>
-                  <input
-                    {...register(`crescimento.${index}.pesoKg` as const, { valueAsNumber: true })}
-                    type="number"
-                    step="0.1"
-                    className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                  />
-                </FormFieldWrapper>
-                <FormFieldWrapper label="Altura (cm)" error={formState.errors.crescimento?.[index]?.alturaCm?.message}>
-                  <input
-                    {...register(`crescimento.${index}.alturaCm` as const, { valueAsNumber: true })}
-                    type="number"
-                    step="0.5"
-                    className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                  />
-                </FormFieldWrapper>
-                <FormFieldWrapper
-                  label="Perímetro cefálico (cm)"
-                  error={formState.errors.crescimento?.[index]?.perimetroCefalicoCm?.message}
-                >
-                  <input
-                    {...register(`crescimento.${index}.perimetroCefalicoCm` as const, { valueAsNumber: true })}
-                    type="number"
-                    step="0.1"
-                    className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                  />
-                </FormFieldWrapper>
-                <RemoveButton onClick={() => medidasField.remove(index)} />
-              </div>
-            ))}
+            {medidasField.fields.map((field, index) => {
+              // mostra IMC instantaneamente conforme digita
+              const peso = medidas?.[index]?.pesoKg;
+              const altura = medidas?.[index]?.alturaCm;
+              const imc = calcIMC(peso, altura);
+
+              return (
+                <div key={field.id} className="grid gap-4 rounded-2xl border border-border/60 p-4 md:grid-cols-5">
+                  <FormFieldWrapper label="Data" error={formState.errors.crescimento?.[index]?.data?.message}>
+                    <input
+                      {...register(`crescimento.${index}.data` as const)}
+                      type="date"
+                      className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    />
+                  </FormFieldWrapper>
+                  <FormFieldWrapper label="Peso (kg)" error={formState.errors.crescimento?.[index]?.pesoKg?.message}>
+                    <input
+                      {...register(`crescimento.${index}.pesoKg` as const, { valueAsNumber: true })}
+                      type="number"
+                      step="0.1"
+                      className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    />
+                  </FormFieldWrapper>
+                  <FormFieldWrapper label="Altura (cm)" error={formState.errors.crescimento?.[index]?.alturaCm?.message}>
+                    <input
+                      {...register(`crescimento.${index}.alturaCm` as const, { valueAsNumber: true })}
+                      type="number"
+                      step="0.5"
+                      className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    />
+                  </FormFieldWrapper>
+                  <FormFieldWrapper
+                    label="Perímetro cefálo (cm)"
+                    error={formState.errors.crescimento?.[index]?.perimetroCefalicoCm?.message}
+                  >
+                    <input
+                      {...register(`crescimento.${index}.perimetroCefalicoCm` as const, { valueAsNumber: true })}
+                      type="number"
+                      step="0.1"
+                      className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                    />
+                  </FormFieldWrapper>
+
+                  {/* IMC calculado automaticamente (somente leitura) */}
+                  <FormFieldWrapper label="IMC (auto)">
+                    <input
+                      value={imc}
+                      readOnly
+                      className="w-full rounded-xl border border-border/60 bg-muted/40 px-3 py-2 text-sm text-foreground/80"
+                      aria-label={`IMC calculado${imc ? `: ${imc}` : ""}`}
+                    />
+                  </FormFieldWrapper>
+
+                  <RemoveButton onClick={() => medidasField.remove(index)} />
+                </div>
+              );
+            })}
           </div>
         )}
         {imcResumo ? <p className="text-sm text-muted">{imcResumo}</p> : null}
       </SectionCard>
+
       <SectionCard title={cadastroStrings.medical.pediatraTitle}>
         <div className="grid gap-4 md:grid-cols-2">
           <FormFieldWrapper label="Nome" error={formState.errors.pediatra?.nome?.message}>
@@ -268,12 +317,13 @@ export function MedicalInfoSection() {
               className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             />
           </FormFieldWrapper>
-          <FormFieldWrapper label="Celular" error={formState.errors.pediatra?.celular?.message}>
-            <input
-              {...register("pediatra.celular")}
-              className="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-            />
-          </FormFieldWrapper>
+
+          <PhoneField
+            name="pediatra.celular"
+            label="Celular"
+            inputClassName="w-full rounded-xl border border-border/60 bg-background px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          />
+
           <FormFieldWrapper label="E-mail" error={formState.errors.pediatra?.email?.message}>
             <input
               {...register("pediatra.email")}
@@ -282,7 +332,11 @@ export function MedicalInfoSection() {
             />
           </FormFieldWrapper>
         </div>
-        <FormFieldWrapper label={cadastroStrings.medical.preferenciasTitle} error={formState.errors.preferenciasCuidados?.message}>
+
+        <FormFieldWrapper
+          label={cadastroStrings.medical.preferenciasTitle}
+          error={formState.errors.preferenciasCuidados?.message}
+        >
           <textarea
             {...register("preferenciasCuidados")}
             rows={3}
