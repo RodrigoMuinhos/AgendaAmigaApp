@@ -1,0 +1,102 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+  // se preferir o client em node_modules/@prisma/client, remova esta linha:
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // Para Prisma <= 5.10, se usar, descomente:
+  // directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// ========================
+// Enums
+// ========================
+
+enum EsquemaTipo {
+  DIARIO_HORARIOS_FIXOS
+  SEMANAL_DIAS_FIXOS
+}
+
+enum DoseStatus {
+  PENDENTE
+  TOMADO
+  ATRASADO
+}
+
+// ========================
+// Models
+// ========================
+
+model pacientes {
+  id                      String   @id @db.Text
+  tutor_id                String   @db.Text
+  nome_completo           String   @db.Text
+  condicoes               String[] @db.Text @default([])
+  alergias                String[] @db.Text @default([])
+  plano_saude_operadora   String?  @db.Text
+  plano_saude_numero      String?  @db.Text
+  plano_saude_validade    DateTime? @db.Timestamptz(6)
+  plano_saude_arquivado   Boolean  @default(false)
+  criado_em               DateTime @default(now()) @db.Timestamptz(6)
+  atualizado_em           DateTime @updatedAt @db.Timestamptz(6)
+
+  medicamentos medicamentos[]
+
+  @@map("pacientes")
+}
+
+model medicamentos {
+  id                      String       @id @db.Text
+  paciente_id             String       @db.Text
+  nome                    String       @db.Text
+  dosagem                 Decimal      @db.Decimal(10,3)
+  unidade_dosagem         String       @db.Text
+  ativo                   Boolean      @default(true)
+  esquema_tipo            EsquemaTipo?
+  esquema_timezone        String?      @db.Text
+  esquema_periodo_inicio  DateTime?    @db.Timestamptz(6)
+  esquema_periodo_fim     DateTime?    @db.Timestamptz(6)
+  esquema_horarios        String[]     @db.Text     @default([])
+  esquema_dias_semana     Int[]        @db.SmallInt @default([])
+  criado_em               DateTime     @default(now()) @db.Timestamptz(6)
+  atualizado_em           DateTime     @updatedAt @db.Timestamptz(6)
+
+  paciente   pacientes   @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
+  dose_logs  dose_logs[]
+
+  @@map("medicamentos")
+}
+
+model dose_logs {
+  id                String      @id @db.Text
+  medicamento_id    String      @db.Text
+  horario_previsto  DateTime    @db.Timestamptz(6)
+  status            DoseStatus
+  horario_real      DateTime?   @db.Timestamptz(6)
+  criado_em         DateTime    @default(now()) @db.Timestamptz(6)
+  atualizado_em     DateTime    @updatedAt @db.Timestamptz(6)
+
+  medicamento medicamentos @relation(fields: [medicamento_id], references: [id], onDelete: Cascade)
+
+  @@index([medicamento_id, horario_previsto], map: "idx_dose_logs_medicamento_horario")
+  @@map("dose_logs")
+}
+
+model share_links {
+  id             String    @id @db.Text
+  tutor_id       String    @db.Text
+  token          String    @unique @db.Text
+  escopo         Json      @db.JsonB
+  expiracao      DateTime  @db.Timestamptz(6)
+  revogado       Boolean   @default(false)
+  criado_em      DateTime  @default(now()) @db.Timestamptz(6)
+  atualizado_em  DateTime  @updatedAt @db.Timestamptz(6)
+  ultimo_acesso  DateTime? @db.Timestamptz(6)
+
+  @@map("share_links")
+}
