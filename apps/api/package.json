@@ -8,9 +8,15 @@
     "dev": "nodemon",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
-    "test": "vitest --run",
+    "test": "vitest run --reporter=dot",
     "test:watch": "vitest",
     "test:cov": "vitest --run --coverage",
+    "db:validate": "prisma validate --schema=prisma/schema.prisma",
+    "db:migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
+    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
+    "db:push": "prisma db push --schema=prisma/schema.prisma",
+    "db:studio": "prisma studio --schema=prisma/schema.prisma",
+    "prisma:gen": "prisma generate --schema=prisma/schema.prisma",
     "prepare": "prisma generate"
   },
   "dependencies": {

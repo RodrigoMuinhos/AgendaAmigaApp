@@ -13,36 +13,33 @@
   "scripts": {
     "// ====== PRE HOOKS ======": "",
     "predev": "npm run shared:build",
-
     "// ====== SHARED ======": "",
     "shared:build": "npm run build -w @agenda-amiga/shared",
     "shared:dev": "npm run dev -w @agenda-amiga/shared",
-
     "// ====== API ======": "",
     "api:build": "npm run build -w @agenda-amiga/api",
     "api:dev": "npm run dev -w @agenda-amiga/api",
     "api:start": "npm run start -w @agenda-amiga/api",
     "api:test": "npm run test -w @agenda-amiga/api",
     "api:test:cov": "npm run test:cov -w @agenda-amiga/api",
-
     "// ====== WEB (Frontend) ======": "",
     "web:build": "npm run build -w @agenda-amiga/frontend",
     "web:dev": "npm run dev -w @agenda-amiga/frontend",
     "web:dev:lan": "npm run dev:lan -w @agenda-amiga/frontend",
     "web:preview:lan": "npm run preview:lan -w @agenda-amiga/frontend",
-
     "// ====== TOP-LEVEL TASKS ======": "",
     "build": "npm run shared:build && npm run api:build && npm run web:build",
     "dev": "concurrently -n SHARED,API,WEB -c yellow,cyan,magenta \"npm run shared:dev\" \"npm run api:dev\" \"npm run web:dev\"",
     "dev:lan": "concurrently -n SHARED,API,WEB -c yellow,cyan,magenta \"npm run shared:dev\" \"npm run api:dev\" \"npm run web:dev:lan\"",
-
     "// ====== UTIL ======": "",
     "clean": "npx rimraf node_modules packages/**/dist apps/**/dist package-lock.json",
-    "versions": "node -v && npm -v"
+    "versions": "node -v && npm -v",
+    "prepare": "husky"
   },
-  "dependencies": {},
   "devDependencies": {
     "concurrently": "^9.2.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.5",
     "rimraf": "^6.0.1",
     "tsx": "^4.20.6"
   }
