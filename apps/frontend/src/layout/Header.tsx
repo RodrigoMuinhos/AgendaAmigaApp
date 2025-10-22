@@ -1,0 +1,122 @@
+import { Bell, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import { EasyModeToggle } from '../components/EasyModeToggle';
+import { LanguageToggle } from '../components/LanguageToggle';
+import { ThemeToggle } from '../components/ThemeToggle';
+import { VoiceButton } from '../components/VoiceButton';
+
+export function Header() {
+  const { t, i18n } = useTranslation();
+  const voiceLang = i18n.language.startsWith('en') ? 'en-US' : 'pt-BR';
+  const [isMenuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) {
+      return;
+    }
+
+    const handlePointer = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointer);
+    document.addEventListener('keydown', handleKey);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointer);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [isMenuOpen]);
+
+  return (
+    <header className="sticky top-0 z-30 border-b border-[rgba(var(--color-border),0.4)] bg-[rgba(var(--color-surface),0.9)] backdrop-blur-xl transition">
+      <div className="mx-auto w-full max-w-6xl px-4 py-3 sm:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap sm:gap-4">
+          <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[rgba(var(--color-border),0.5)] bg-[rgba(var(--color-primary),0.12)] text-[rgb(var(--color-primary))]">
+              <AgendaLogo className="h-6 w-6" />
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="whitespace-nowrap text-sm font-semibold uppercase tracking-[0.32em] text-[rgb(var(--color-primary))] sm:text-base">
+                {t('app.name')}
+              </span>
+              <span className="truncate text-sm text-[rgba(var(--color-text),0.75)]">
+                {t('app.tagline')}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              to="/alerts"
+              aria-label={t('nav.alerts', 'Alertas')}
+              className="inline-flex h-11 items-center gap-2 rounded-2xl border border-[rgba(var(--color-primary),0.25)] bg-[rgba(var(--color-primary),0.12)] px-3 text-sm font-semibold text-[rgb(var(--color-primary))] shadow-soft transition hover:border-[rgba(var(--color-primary),0.45)] hover:bg-[rgba(var(--color-primary),0.2)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(30,136,229,0.35)]"
+            >
+              <Bell className="h-5 w-5" aria-hidden />
+              <span className="hidden sm:inline">{t('nav.alerts', 'Alertas')}</span>
+            </Link>
+
+            <div ref={menuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((prev) => !prev)}
+                aria-haspopup="true"
+                aria-expanded={isMenuOpen}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[rgba(var(--color-border),0.6)] bg-[rgba(var(--color-surface),0.95)] text-[rgb(var(--color-text))] transition hover:border-[rgba(var(--color-primary),0.5)] hover:text-[rgb(var(--color-primary))] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(30,136,229,0.35)] sm:w-auto sm:px-3 sm:text-sm sm:font-semibold"
+              >
+                <SlidersHorizontal className="h-5 w-5" aria-hidden />
+                <span className="sr-only sm:not-sr-only">
+                  {isMenuOpen ? t('app.collapseControls') : t('app.expandControls')}
+                </span>
+              </button>
+
+              {isMenuOpen ? (
+                <div className="absolute right-0 top-[calc(100%+0.75rem)] z-40 w-72 rounded-3xl border border-[rgba(var(--color-border),0.4)] bg-[rgb(var(--color-surface))] p-4 shadow-elevated">
+                  <div className="flex flex-col gap-4">
+                    <VoiceButton text={t('app.voiceText')} label={t('app.voice')} lang={voiceLang} />
+                    <EasyModeToggle />
+                    <LanguageToggle />
+                    <ThemeToggle />
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+type AgendaLogoProps = {
+  className?: string;
+};
+
+function AgendaLogo({ className }: AgendaLogoProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      className={className}
+    >
+      <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0" />
+      <path d="M12 7v5l3 3" />
+    </svg>
+  );
+}

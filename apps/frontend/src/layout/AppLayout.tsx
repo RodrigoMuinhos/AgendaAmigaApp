@@ -1,7 +1,6 @@
 ﻿import type { SVGProps } from "react";
-import { useMemo, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { CommandPalette, type CommandPaletteHandle, type CommandPaletteItem } from "../components/CommandPalette";
+import { useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../utils/cn";
 
 type NavigationItem = {
@@ -17,7 +16,7 @@ type NavigationItem = {
 const NAVIGATION_ITEMS: readonly NavigationItem[] = [
   {
     id: "home",
-    label: "Início",
+    label: "Inicio",
     description: "Resumo geral e avisos essenciais",
     to: "/app",
     icon: HomeIcon,
@@ -25,75 +24,97 @@ const NAVIGATION_ITEMS: readonly NavigationItem[] = [
     exact: true,
   },
   {
-    id: "familia",
-    label: "Família",
-    description: "Cards individuais de cada familiar",
-    to: "/app/familia",
-    icon: UsersIcon,
-    keywords: ["pacientes", "cartões", "familia"],
+    id: "caderneta",
+    label: "Caderneta da crianca",
+    description: "Visao geral, dados essenciais e evolucao",
+    to: "/app/caderneta",
+    icon: NotebookIcon,
+    keywords: ["crianca", "caderneta", "visao", "dados"],
   },
   {
-    id: "tratamentos",
-    label: "Tratamentos",
-    description: "Rotinas de medicamentos e terapias",
-    to: "/app/tratamentos",
+    id: "vacinacao",
+    label: "Caderneta de vacinacao",
+    description: "Controle de doses aplicadas e pendentes",
+    to: "/app/caderneta/vacinacao",
+    icon: SyringeIcon,
+    keywords: ["vacinas", "doses", "imunizacao"],
+  },
+  {
+    id: "cuidados",
+    label: "Cuidados",
+    description: "Consultas, tratamentos e acompanhamentos",
+    to: "/app/cuidados",
     icon: PillIcon,
-    keywords: ["medicamentos", "doses", "rotinas"],
+    keywords: ["consultas", "tratamentos", "saude"],
   },
   {
-    id: "agenda",
-    label: "Agenda",
-    description: "Programação de visitas e compromissos",
-    to: "/app/agenda",
+    id: "rotina",
+    label: "Rotina",
+    description: "Calendario completo e agendamentos",
+    to: "/app/rotina",
     icon: CalendarIcon,
-    keywords: ["calendario", "avisos", "agenda"],
+    keywords: ["agenda", "calendario", "compromissos"],
   },
   {
-    id: "insights",
-    label: "Insights",
-    description: "Relatórios e indicadores da família",
-    to: "/app/insights",
-    icon: ChartIcon,
-    keywords: ["relatorios", "metricas", "dados"],
+    id: "alertas",
+    label: "Alertas",
+    description: "Avisos e comunicados essenciais",
+    to: "/app/alertas",
+    icon: BellIcon,
+    keywords: ["lembretes", "avisos", "notificacoes"],
   },
-  {
-    id: "configuracoes",
-    label: "Configurações",
-    description: "Preferências da conta e compartilhamento",
-    to: "/app/configuracoes",
-    icon: SettingsIcon,
-    keywords: ["preferencias", "perfil", "conta"],
-  },
-] as const;
+];
 
 export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const commandPaletteRef = useRef<CommandPaletteHandle | null>(null);
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const paletteItems = useMemo<CommandPaletteItem[]>(() => {
-    const navigationItems = NAVIGATION_ITEMS.map<CommandPaletteItem>((item) => ({
-      id: `nav-${item.id}`,
-      label: item.label,
-      description: item.description,
-      group: "Sessões",
-      to: item.to,
-      keywords: item.keywords,
-    }));
+  const renderNavigationButtons = (variant: "mobile" | "desktop") =>
+    NAVIGATION_ITEMS.map((item) => {
+      const isActive = item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to);
+      const isMobileVariant = variant === "mobile";
 
-    return [
-      ...navigationItems,
-      {
-        id: "atalho-novo-familiar",
-        label: "Cadastrar novo familiar",
-        description: "Criar um novo card e iniciar acompanhamento",
-        group: "Atalhos",
-        to: "/app/familia",
-        keywords: ["adicionar", "familia", "novo"],
-      },
-    ];
-  }, []);
+      const baseButtonClasses = isMobileVariant
+        ? "group flex w-full items-center gap-2 rounded-lg text-left text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/40"
+        : "group flex w-full items-start gap-3 rounded-xl text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary/40";
+
+      const variantClasses = isMobileVariant
+        ? "border border-border/50 bg-surface/90 px-3 py-2"
+        : "border border-transparent px-3 py-2.5";
+
+      const stateClasses = isActive
+        ? "border-primary/50 bg-primary/5 text-primary"
+        : "text-muted hover:border-primary/40 hover:bg-primary/5 hover:text-primary";
+
+      const baseIconClasses = isMobileVariant
+        ? "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-inherit transition"
+        : "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-inherit transition";
+
+      const iconVariantClasses = isMobileVariant ? "border-border/50 bg-background" : "border-border/50 bg-background/70";
+      const iconStateClasses = isActive ? "border-primary/40 text-primary" : "text-muted group-hover:border-primary/40";
+
+      const descriptionClasses = isActive
+        ? "text-xs text-primary/80"
+        : "text-xs text-muted group-hover:text-primary/70";
+
+      return (
+        <button
+          key={`${variant}-${item.id}`}
+          type="button"
+          onClick={() => handleNavigate(item.to)}
+          className={cn(baseButtonClasses, variantClasses, stateClasses)}
+        >
+          <span className={cn(baseIconClasses, iconVariantClasses, iconStateClasses)}>
+            <item.icon className="h-4 w-4" />
+          </span>
+          <span className={isMobileVariant ? "flex-1 text-sm font-medium leading-tight" : "flex flex-col gap-0.5"}>
+            <span className={isMobileVariant ? "block" : "text-sm font-semibold"}>{item.label}</span>
+            {!isMobileVariant && <span className={descriptionClasses}>{item.description}</span>}
+          </span>
+        </button>
+      );
+    });
 
   const handleNavigate = (to: string) => {
     setMobileMenuOpen(false);
@@ -101,14 +122,54 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="relative min-h-screen bg-background overflow-x-hidden">
-      <CommandPalette ref={commandPaletteRef} items={paletteItems} onNavigate={handleNavigate} />
+    <div className="relative min-h-screen bg-background overflow-x-hidden">{/* Side Navigation Drawer - Mobile */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-60 transform bg-surface shadow-xl transition-transform duration-300 ease-in-out lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex h-full flex-col">
+          <div className="flex items-center justify-between border-b border-border/60 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-primary/10">
+                <AgendaLogo className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-sm font-semibold">Agenda Amiga</span>
+            </div>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="rounded-lg p-2 text-muted hover:bg-primary/10 hover:text-primary"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          <nav className="flex-1 overflow-y-auto space-y-1.5 p-3">
+            {renderNavigationButtons("mobile")}
+          </nav>
+        </div>
+      </div>
+
+      {/* Overlay when menu is open */}
+      {isMobileMenuOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
 
       <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 pb-12 pt-6 sm:px-6 lg:px-12">
         <header className="rounded-3xl border border-border bg-surface px-4 py-4 shadow-soft sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3 sm:gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                className="lg:hidden flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10"
+              >
+                <svg className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <div className="hidden lg:flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-primary/10">
                 <AgendaLogo className="h-7 w-7 text-primary" />
               </div>
               <div className="space-y-1">
@@ -117,63 +178,26 @@ export default function AppLayout() {
               </div>
             </div>
 
-            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
-              <div className="flex w-full items-center gap-2 sm:w-auto sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() => setMobileMenuOpen((value) => !value)}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted transition hover:border-primary/60 hover:text-primary sm:hidden"
-                >
-                  <span>{isMobileMenuOpen ? "Fechar" : "Menu"}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => commandPaletteRef.current?.open()}
-                  className="hidden items-center gap-2 rounded-2xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted transition hover:border-primary/60 hover:text-primary lg:flex"
-                >
-                  <SearchMiniIcon className="h-4 w-4" />
-                  <span>Buscar (Ctrl+K)</span>
-                </button>
-              </div>
-
-              <div className="flex w-full items-center gap-3 rounded-3xl border border-border bg-background px-3 py-2 sm:w-auto">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/15 text-sm font-semibold text-primary">
-                  RA
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-foreground">Rodrigo Alves</span>
-                  <span className="text-[11px] text-muted">Tutor familiar</span>
-                </div>
-              </div>
+            <div className="flex w-full items-center justify-end gap-2">
+              <button
+                type="button"
+                
+                className="inline-flex items-center gap-2 rounded-2xl border border-border bg-background px-3 py-2 text-xs font-semibold text-muted transition hover:border-primary/60 hover:text-primary"
+              >
+                <SearchMiniIcon className="h-4 w-4" />
+                <span className="hidden sm:inline">Buscar...</span>
+                <kbd className="hidden rounded bg-muted/20 px-1.5 font-mono text-[10px] font-medium text-muted sm:inline">Ctrl+K</kbd>
+              </button>
             </div>
           </div>
         </header>
 
         <div className="mt-6 flex flex-1 gap-6">
+          {/* Desktop Sidebar */}
           <aside className="hidden w-60 shrink-0 flex-col gap-2 rounded-3xl border border-border bg-surface px-3 py-5 shadow-soft lg:flex">
-            <span className="px-2 text-xs font-semibold uppercase tracking-wide text-muted">Navegação</span>
-            <nav className="flex flex-col gap-1">
-              {NAVIGATION_ITEMS.map((item) => (
-                <NavLink
-                  key={`side-${item.id}`}
-                  to={item.to}
-                  end={item.exact}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-medium transition",
-                      isActive ? "bg-primary/10 text-primary" : "text-muted hover:bg-primary/5 hover:text-primary"
-                    )
-                  }
-                >
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl border border-border bg-background">
-                    <item.icon className="h-4 w-4" />
-                  </span>
-                  <div className="flex flex-col">
-                    <span>{item.label}</span>
-                    <span className="text-[11px] text-muted">{item.description}</span>
-                  </div>
-                </NavLink>
-              ))}
+            <span className="px-2 text-xs font-semibold uppercase tracking-wide text-muted">Navegacao</span>
+            <nav className="flex flex-col gap-2">
+              {renderNavigationButtons("desktop")}
             </nav>
           </aside>
 
@@ -182,71 +206,15 @@ export default function AppLayout() {
           </main>
         </div>
       </div>
-
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-40 flex flex-col bg-background">
-          <header className="flex items-center justify-between border-b border-border/60 px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-primary/10">
-                <AgendaLogo className="h-6 w-6 text-primary" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xs font-semibold uppercase tracking-[0.3em] text-primary/80">Agenda Amiga</span>
-                <span className="text-sm font-semibold text-foreground">Escolha uma seção</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(false)}
-              className="rounded-2xl border border-border bg-background px-3 py-1 text-xs font-semibold text-muted transition hover:border-primary/60 hover:text-primary"
-            >
-              Fechar
-            </button>
-          </header>
-          <div className="flex-1 overflow-y-auto px-5 py-6">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {NAVIGATION_ITEMS.map((item) => {
-                const isActive = item.exact ? location.pathname === item.to : location.pathname.startsWith(item.to);
-                return (
-                  <button
-                    key={"mobile-" + item.id}
-                    type="button"
-                    onClick={() => handleNavigate(item.to)}
-                    className={cn(
-                      "flex flex-col gap-3 rounded-3xl border border-border bg-surface p-4 text-left shadow-soft transition-transform duration-150 hover:-translate-y-0.5 hover:border-primary/40",
-                      isActive ? "border-primary/60 shadow-elevated" : undefined
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-background text-primary">
-                        <item.icon className="h-5 w-5" />
-                      </span>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-foreground">{item.label}</span>
-                        <span className="text-xs text-muted">{item.description}</span>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 function AgendaLogo(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect x={3.5} y={5} width={17} height={15} rx={5} />
-      <path d="M8 3v4" />
-      <path d="M16 3v4" />
-      <path d="M3.5 9h17" />
-      <circle cx={10} cy={13} r={0.9} fill="currentColor" stroke="none" />
-      <circle cx={14} cy={13} r={0.9} fill="currentColor" stroke="none" />
-      <path d="M9.5 16.2c.7.7 1.5 1.1 2.5 1.1s1.8-.4 2.5-1.1" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0" />
+      <path d="M12 7v5l3 3" />
     </svg>
   );
 }
@@ -260,13 +228,31 @@ function HomeIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-function UsersIcon(props: SVGProps<SVGSVGElement>) {
+function NotebookIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M9 12a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z" />
-      <path d="M17 13a3 3 0 1 0 0-6" />
-      <path d="M3 21v-1a6 6 0 0 1 6-6h0a6 6 0 0 1 6 6v1" />
-      <path d="M17 21v-1a4 4 0 0 0-4-4" strokeOpacity={0.6} />
+      <path d="M6 3h11a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+      <path d="M8 3v18" />
+      <path d="M11 8h5" />
+      <path d="M11 12h5" />
+      <path d="M11 16h5" />
+      <path d="M6 8h.01" />
+      <path d="M6 12h.01" />
+      <path d="M6 16h.01" />
+    </svg>
+  );
+}
+
+function SyringeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m18 2-4 4" />
+      <path d="m22 6-10 10" />
+      <path d="m14 6 4 4" />
+      <path d="m11 9 4 4" />
+      <path d="m7 13 4 4" />
+      <path d="m2 22 5-5" />
+      <path d="m3 17 4 4" />
     </svg>
   );
 }
@@ -295,31 +281,21 @@ function CalendarIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-function ChartIcon(props: SVGProps<SVGSVGElement>) {
+function BellIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M4 20V9" />
-      <path d="M10 20V4" />
-      <path d="M16 20v-8" />
-      <path d="M22 20v-5" />
-    </svg>
-  );
-}
-
-function SettingsIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <circle cx={12} cy={12} r={3} />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
+      <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
   );
 }
 
 function SearchMiniIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <circle cx={7} cy={7} r={4.5} />
-      <path d="m12.5 12.5-2-2" />
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
     </svg>
   );
 }
+
+

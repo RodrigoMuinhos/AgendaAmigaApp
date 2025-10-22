@@ -1,3 +1,9 @@
+const configuredServerUrl = process.env.OPENAPI_SERVER_URL ?? process.env.CORS_ORIGIN ?? "/api";
+const openApiServerUrl =
+  !configuredServerUrl || configuredServerUrl === "*" ? "/api" : configuredServerUrl;
+const serverDescription =
+  openApiServerUrl === "/api" ? "Ambiente local" : "Ambiente configurado";
+
 export const openApiDocument = {
   openapi: "3.0.3",
   info: {
@@ -8,8 +14,8 @@ export const openApiDocument = {
   },
   servers: [
     {
-      url: "http://localhost:3333",
-      description: "Ambiente local",
+      url: openApiServerUrl,
+      description: serverDescription,
     },
   ],
   tags: [

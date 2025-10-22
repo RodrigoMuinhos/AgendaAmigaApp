@@ -24,7 +24,7 @@ Monorepo que agrupa a API Express e o pacote compartilhado de dominio usados pel
    ```
 2. O `nodemon` dentro do container observa `apps/api/src` e `packages/shared/src`. Alteracoes reiniciam a API automaticamente.
 3. O volume nomeado preserva os `node_modules` dentro do container, evitando re-instalacoes a cada rebuild.
-4. O servidor respondera em `http://localhost:3000`.
+4. O servidor respondera em `http://127.0.0.1:3000`.
 
 ## Execucao para producao local
 1. Gere a imagem pronta para producao:

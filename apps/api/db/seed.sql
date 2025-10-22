@@ -154,3 +154,128 @@ ON CONFLICT (id) DO UPDATE SET
   revogado = EXCLUDED.revogado,
   atualizado_em = NOW();
 
+INSERT INTO familias (
+  id,
+  nome,
+  cep,
+  endereco,
+  bairro,
+  cidade,
+  estado,
+  cuidador_principal,
+  relacao_cuidador_principal,
+  contato,
+  telefone_cuidador,
+  foco_cuidado,
+  observacoes
+)
+VALUES (
+  'familia-tutor-1',
+  'Familia Souza',
+  '60150110',
+  'Rua das Flores, 120',
+  'Centro',
+  'Fortaleza',
+  'CE',
+  'Maria Souza',
+  'Mae',
+  '85999999999',
+  '85999999999',
+  'Gestao de medicamentos',
+  'Acompanhamento semanal com equipe multiprofissional'
+)
+ON CONFLICT (id) DO UPDATE SET
+  nome = EXCLUDED.nome,
+  cep = EXCLUDED.cep,
+  endereco = EXCLUDED.endereco,
+  bairro = EXCLUDED.bairro,
+  cidade = EXCLUDED.cidade,
+  estado = EXCLUDED.estado,
+  cuidador_principal = EXCLUDED.cuidador_principal,
+  relacao_cuidador_principal = EXCLUDED.relacao_cuidador_principal,
+  contato = EXCLUDED.contato,
+  telefone_cuidador = EXCLUDED.telefone_cuidador,
+  foco_cuidado = EXCLUDED.foco_cuidado,
+  observacoes = EXCLUDED.observacoes,
+  atualizado_em = NOW();
+
+INSERT INTO familia_membros (
+  id,
+  familia_id,
+  nome,
+  data_nascimento,
+  documento,
+  bairro,
+  cidade,
+  estado
+)
+VALUES
+  (
+    'familia-tutor-1-membro-1',
+    'familia-tutor-1',
+    'Ana Souza',
+    '2012-03-15',
+    '12345678900',
+    'Centro',
+    'Fortaleza',
+    'CE'
+  ),
+  (
+    'familia-tutor-1-membro-2',
+    'familia-tutor-1',
+    'Bruno Lima',
+    '2014-09-22',
+    NULL,
+    'Centro',
+    'Fortaleza',
+    'CE'
+  )
+ON CONFLICT (id) DO UPDATE SET
+  nome = EXCLUDED.nome,
+  data_nascimento = EXCLUDED.data_nascimento,
+  documento = EXCLUDED.documento,
+  bairro = EXCLUDED.bairro,
+  cidade = EXCLUDED.cidade,
+  estado = EXCLUDED.estado,
+  atualizado_em = NOW();
+
+INSERT INTO cuidadores (id, familia_id, nome, relacao, telefone)
+VALUES
+  (
+    'familia-tutor-1-cuidador-1',
+    'familia-tutor-1',
+    'Carlos Souza',
+    'Pai',
+    '85988887777'
+  ),
+  (
+    'familia-tutor-1-cuidador-2',
+    'familia-tutor-1',
+    'Fernanda Lima',
+    'Tia',
+    NULL
+  )
+ON CONFLICT (id) DO UPDATE SET
+  nome = EXCLUDED.nome,
+  relacao = EXCLUDED.relacao,
+  telefone = EXCLUDED.telefone,
+  atualizado_em = NOW();
+
+INSERT INTO tratamentos (id, familia_id, nome, dose, horario, instrucoes)
+VALUES
+  (
+    'tratamento-metformina',
+    'familia-tutor-1',
+    'Metformina',
+    '500 mg',
+    '08:00, 20:00',
+    'Administrar apos as refeicoes'
+  )
+ON CONFLICT (id) DO UPDATE SET
+  familia_id = EXCLUDED.familia_id,
+  nome = EXCLUDED.nome,
+  dose = EXCLUDED.dose,
+  horario = EXCLUDED.horario,
+  instrucoes = EXCLUDED.instrucoes,
+  atualizado_em = NOW();
+

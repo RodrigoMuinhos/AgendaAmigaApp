@@ -1,0 +1,96 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --color-bg: 247 249 252;
+  --color-surface: 255 255 255;
+  --color-border: 208 215 222;
+  --color-text: 14 23 38;
+  --color-muted: 87 104 128;
+  --color-primary: 30 136 229;
+  --color-primary-dark: 21 101 192;
+  --color-accent: 92 107 79;
+  --color-success: 46 125 50;
+  --color-warning: 237 108 2;
+  --color-danger: 198 40 40;
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-pill: 999px;
+  font-family: 'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: 14 20 29;
+  --color-surface: 28 37 52;
+  --color-border: 68 84 115;
+  --color-text: 224 234 248;
+  --color-muted: 151 170 200;
+  --color-primary: 80 170 250;
+  --color-primary-dark: 48 148 240;
+  --color-accent: 190 200 160;
+  --color-success: 144 208 152;
+  --color-warning: 255 198 102;
+  --color-danger: 245 115 165;
+}
+
+@layer base {
+  html {
+    @apply min-h-full text-lg transition-colors;
+    background-color: rgb(var(--color-bg));
+    color: rgb(var(--color-text));
+  }
+
+  body {
+    @apply min-h-screen bg-[rgb(var(--color-bg))] antialiased transition-colors;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(var(--color-primary));
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: rgba(var(--color-primary), 0.25);
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-3xl border border-transparent bg-[rgb(var(--color-surface))] shadow-soft transition focus-within:ring-2 focus-within:ring-[rgb(var(--color-primary))];
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-full px-6 py-3 text-lg font-semibold transition focus-visible:ring-4 focus-visible:ring-[rgb(var(--color-primary))] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--color-surface))];
+  }
+
+  .btn-primary {
+    @apply btn bg-[rgb(var(--color-primary))] text-white hover:bg-[rgb(var(--color-primary-dark))];
+  }
+
+  .section-title {
+    @apply text-3xl font-semibold tracking-tight text-[rgb(var(--color-text))];
+  }
+}
+
+@layer utilities {
+  .text-muted {
+    color: rgb(var(--color-muted));
+  }
+
+  .bg-primary {
+    background-color: rgb(var(--color-primary));
+  }
+
+  .bg-surface {
+    background-color: rgb(var(--color-surface));
+  }
+
+  .border-primary {
+    border-color: rgb(var(--color-primary));
+  }
+}

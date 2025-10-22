@@ -1,27 +1,39 @@
-﻿import path from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import tsconfigPaths from "vite-tsconfig-paths";
+import { VitePWA } from "vite-plugin-pwa";
+
+const devApiTarget = process.env.VITE_DEV_PROXY_TARGET ?? "http://127.0.0.1:3333";
 
 export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: "autoUpdate",
+      devOptions: {
+        enabled: true,
+      },
+      workbox: {
+        navigateFallbackDenylist: [/^\/api\//],
+      },
+    }),
+  ],
   server: {
+    host: true,
     port: 5173,
-    open: true,
-    fs: { allow: ['..'] } // <- permite importar de fora de apps/frontend
-  },
-  plugins: [react(), tsconfigPaths()],
-  resolve: {
-    alias: {
-      "@agenda-amiga/shared": path.resolve(__dirname, "../../packages/shared/src"),
+    strictPort: true,
+    proxy: {
+      "/api": {
+        target: devApiTarget,
+        changeOrigin: true,
+      },
+      "/socket.io": {
+        target: devApiTarget,
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
-  build: {
-    outDir: "dist",
-    sourcemap: false,
-    emptyOutDir: true,
+  ssr: {
+    noExternal: ["@agenda-amiga/shared"],
   },
-  optimizeDeps: {
-    // Ajuda o Vite a não tentar otimizar algo do monorepo como pacote externo
-    exclude: ["@agenda-amiga/shared"]
-  }
 });

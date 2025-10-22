@@ -1,0 +1,24 @@
+{
+  "name": "Agenda Amiga",
+  "short_name": "Agenda Amiga",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F9FC",
+  "lang": "pt-BR",
+  "scope": "/",
+  "description": "Aplicativo gov.br para apoiar familias cuidadoras.",
+  "theme_color": "#1E88E5",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

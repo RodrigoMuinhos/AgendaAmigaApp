@@ -1,6 +1,6 @@
 {
-  "watch": ["src", "../../packages/shared/src"],
-  "ext": "ts",
+  "watch": ["src", "../../packages/shared/dist"],
+  "ext": "ts,js,json",
   "ignore": ["dist"],
   "exec": "node -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts"
 }

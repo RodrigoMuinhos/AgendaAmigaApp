@@ -1,0 +1,368 @@
+{
+  "app": {
+    "name": "Agenda Amiga",
+    "tagline": "Cuidado em família com simplicidade.",
+    "language": "Idioma",
+    "languagePt": "Português",
+    "languageEn": "Inglês",
+    "easyMode": "Modo Fácil",
+    "easyModeDescription": "Menos campos, linguagem simples.",
+    "voice": "Ouvir",
+    "voiceText": "Agenda Amiga ajuda você a cuidar de quem ama com passos simples.",
+    "skipToContent": "Ir para o conteúdo principal",
+    "darkMode": "Modo escuro",
+    "lightMode": "Modo claro",
+    "expandControls": "Expandir cabeçalho",
+    "collapseControls": "Recolher cabeçalho"
+  },
+  "nav": {
+    "home": "Inicio",
+    "caderneta": "Caderneta da crianca",
+    "children": "Criancas",
+    "care": "Cuidados",
+    "family": "Familias",
+    "treatments": "Tratamentos",
+    "routine": "Rotina de hoje",
+    "alerts": "Alertas",
+    "gastroReport": "Relatorio Gastrointestinal",
+    "aria": "Navegacao principal",
+    "collapseMenu": "Recolher menu",
+    "expandMenu": "Expandir menu",
+    "toggleMenu": "Alternar menu"
+  },
+  "footer": {
+    "mission": "Rodrigo Muinhos Corporete © {{year}} • Soluções digitais para cuidado familiar.",
+    "accessibility": "Acessível: contraste AA/AAA, foco visível e áudio disponível."
+  },
+  "common": {
+    "loading": "Carregando...",
+    "error": "Algo deu errado. Tente novamente.",
+    "retry": "Tentar novamente",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "select": "Selecione",
+    "add": "Adicionar",
+    "next": "Próximo",
+    "previous": "Voltar",
+    "finish": "Concluir",
+    "draftSaved": "Rascunho salvo.",
+    "draftLoaded": "Rascunho carregado.",
+    "draftCleared": "Rascunho removido."
+  },
+  "validation": {
+    "required": "Campo obrigatório.",
+    "minLength": "Digite pelo menos {{count}} caracteres.",
+    "invalidPostalCode": "CEP não encontrado ou inválido."
+  },
+  "home": {
+    "hero": {
+      "title": "Organize o cuidado com confiança",
+      "subtitle": "A Agenda Amiga centraliza famílias, medicamentos e alertas com linguagem clara."
+    },
+    "cards": {
+      "care": {
+        "title": "🩺 Cuidados",
+        "description": "Organize consultas, exames e terapias em um só lugar."
+      },
+      "children": {
+        "title": "Criancas",
+        "description": "Cadastre criancas e mantenha os dados essenciais atualizados."
+      },
+      "family": {
+        "title": "👨‍👩‍👧 Família",
+        "description": "Cadastre quem recebe e quem oferece o cuidado."
+      },
+      "treatments": {
+        "title": "💊 Medicamentos",
+        "description": "Registre remédios, doses e horários em segundos."
+      },
+      "routine": {
+        "title": "⏰ Rotina de Hoje",
+        "description": "Veja o checklist do dia e marque o que já aconteceu."
+      },
+      "alerts": {
+        "title": "🔔 Alertas",
+        "description": "Acompanhe lembretes de exames, documentos e pendências."
+      }
+    },
+    "quickStats": {
+      "title": "Resumo rápido",
+      "families": "{{count}} famílias registradas",
+      "doses": "{{count}} doses hoje",
+      "shares": "{{count}} cuidadores compartilhados",
+      "empty": "Cadastre uma família para ver o resumo."
+    },
+    "actions": {
+      "startOnboarding": "Começar cadastro de família",
+      "addChild": "Adicionar crianca"
+    }
+  },
+  "onboarding": {
+    "title": "Cadastro educativo",
+    "subtitle": "Seis passos rápidos para organizar o cuidado.",
+    "voiceSummary": "Onboarding educativo em seis passos. Você pode salvar como rascunho a qualquer momento.",
+    "resumeDraft": "Retomar rascunho",
+    "removeDraft": "Descartar rascunho",
+    "saveDraft": "Salvar rascunho",
+    "stepStatus": "Passo {{current}} de {{total}}",
+    "actions": {
+      "back": "Voltar",
+      "next": "Próximo passo",
+      "submit": "Concluir cadastro"
+    },
+    "stepper": {
+      "who": "Quem cuida",
+      "basics": "Básico",
+      "health": "Saúde",
+      "guardians": "Responsáveis",
+      "routine": "Rotina",
+      "files": "Anexos"
+    },
+    "steps": {
+      "who": {
+        "title": "Quem cuida",
+        "description": "Identifique a família e a pessoa cuidadora principal.",
+        "fields": {
+          "familyName": "Nome da família",
+          "caregiverName": "Nome de quem cuida",
+          "caregiverRelation": "Relação com a pessoa cuidada",
+          "caregiverPhone": "Telefone / WhatsApp"
+        }
+      },
+      "basics": {
+        "title": "Informações básicas",
+        "description": "Dados essenciais da pessoa que recebe cuidado.",
+        "fields": {
+          "personName": "Nome completo",
+          "birthdate": "Data de nascimento",
+          "document": "Documento (RG/CPF)",
+          "address": "Endereço principal"
+        }
+      },
+      "health": {
+        "title": "Saúde",
+        "description": "Principais necessidades de saúde no dia a dia.",
+        "fields": {
+          "conditions": "Condições de saúde",
+          "allergies": "Alergias",
+          "medications": "Medicamentos em uso",
+          "supports": "Apoios e equipamentos"
+        }
+      },
+      "guardians": {
+        "title": "Responsáveis",
+        "description": "Quem faz parte da rede de apoio?",
+        "fields": {
+          "primaryGuardian": "Responsável principal",
+          "backupGuardian": "Responsável reserva",
+          "emergencyPhone": "Telefone de emergência",
+          "whatsAppInvite": "Convidar cuidador por WhatsApp"
+        }
+      },
+      "routine": {
+        "title": "Rotina",
+        "description": "Horários importantes e lembretes diários.",
+        "fields": {
+          "wakeTime": "Horário de despertar",
+          "sleepTime": "Hora de dormir",
+          "meals": "Principais refeições",
+          "medicationName": "Nome do medicamento",
+          "medicationDose": "Dose",
+          "medicationSchedule": "Horário"
+        }
+      },
+      "files": {
+        "title": "Anexos",
+        "description": "Documentos e registros úteis para a família.",
+        "fields": {
+          "documents": "Documentos importantes",
+          "notes": "Observações extras"
+        }
+      }
+    },
+    "feedback": {
+      "saved": "Rascunho salvo.",
+      "submitted": "Cadastro enviado com sucesso!"
+    }
+  },
+  "family": {
+    "title": "Famílias cuidadoras",
+    "subtitle": "Organize informações essenciais de quem cuida e de quem recebe o cuidado.",
+    "create": "Adicionar família",
+    "empty": "Nenhuma família cadastrada ainda.",
+    "members": "{{count}} membros",
+    "caregivers": "{{count}} cuidadores",
+    "steps": {
+      "caregiver": "Informações do cuidador",
+      "patient": "Informações do paciente",
+      "medical": "Informações médicas"
+    },
+    "form": {
+      "title": "Nova família",
+      "basicInfo": "Informações básicas",
+      "members": "Pessoas cuidadas",
+      "careTeam": "Rede de apoio",
+      "fields": {
+        "postalCode": "CEP",
+        "address": "Endereço",
+        "neighborhood": "Bairro",
+        "city": "Cidade",
+        "state": "Estado",
+        "primaryCaregiver": "Responsável principal",
+        "caregiverPhone": "Telefone / WhatsApp",
+        "notes": "Observações"
+      },
+      "memberFields": {
+        "name": "Nome completo (paciente)",
+        "avatar": "Foto do paciente",
+        "addAvatar": "Adicionar foto",
+        "changeAvatar": "Trocar foto",
+        "removeAvatar": "Remover foto",
+        "birthdate": "Data de nascimento",
+        "document": "CPF / RG",
+        "postalCode": "CEP",
+        "addressNumber": "Número",
+        "address": "Endereço",
+        "neighborhood": "Bairro",
+        "city": "Cidade",
+        "state": "Estado",
+        "medicalHistory": "Histórico médico",
+        "limitations": "Limitações",
+        "allergies": "Alergias",
+        "weight": "Peso (kg)",
+        "height": "Altura (cm)",
+        "imc": "IMC",
+        "needs": "Necessidades"
+      },
+      "caregiverFields": {
+        "name": "Nome",
+        "relation": "Relação",
+        "phone": "Telefone"
+      },
+      "addMember": "Adicionar pessoa cuidada",
+      "addCaregiver": "Adicionar cuidador",
+      "submit": "Salvar família",
+      "defaultName": "Família cuidadora"
+    }
+  },
+  "treatments": {
+    "title": "Tratamentos e medicamentos",
+    "subtitle": "Gerencie medicamentos, doses e responsáveis.",
+    "empty": "Nenhum tratamento cadastrado ainda.",
+    "doseForm": {
+      "title": "Adicionar dose",
+      "fields": {
+        "name": "Nome do medicamento",
+        "dose": "Dose",
+        "schedule": "Horário",
+        "instructions": "Instruções"
+      },
+      "submit": "Salvar dose"
+    },
+    "list": {
+      "doseCount": "{{count}} doses",
+      "nextDose": "Próxima dose: {{time}}"
+    }
+  },
+  "routine": {
+    "todayTitle": "Rotina de hoje",
+    "subtitle": "Marque o que já foi concluído. Os alertas são atualizados automaticamente.",
+    "empty": "Nenhuma atividade para hoje.",
+    "complete": "Marcar como feito",
+    "markAll": "Marcar tudo",
+    "resetAll": "Limpar seleção",
+    "progress": "{{completed}} de {{total}} concluídos"
+  },
+  "alerts": {
+    "title": "Alertas e lembretes",
+    "subtitle": "Acompanhe pendências importantes e notificações.",
+    "empty": "Sem alertas pendentes.",
+    "markDone": "Marcar como resolvido",
+    "snooze": "Lembrar depois",
+    "count": "{{pending}} pendentes de {{total}}",
+    "types": {
+      "medication": "Medicamento",
+      "appointment": "Consulta",
+      "document": "Documento",
+      "other": "Outro"
+    }
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "description": "Não encontramos o que você procura. Verifique o endereço ou volte para o início.",
+    "cta": "Voltar para o início"
+  },
+  "care": {
+    "title": "Cuidados",
+    "subtitle": "Consultas, exames e terapias programadas para sua família.",
+    "empty": "Nenhum atendimento cadastrado ainda.",
+    "actions": {
+      "newConsultation": "Nova consulta",
+      "newExam": "Novo exame",
+      "newTherapy": "Nova terapia",
+      "newCare": "Novo atendimento"
+    },
+    "filters": {
+      "allTypes": "Todos os tipos",
+      "types": {
+        "CONSULTA": "Consultas",
+        "EXAME": "Exames",
+        "TERAPIA": "Terapias"
+      },
+      "status": {
+        "AGENDADO": "Agendado",
+        "REALIZADO": "Realizado",
+        "FALTOU": "Faltou",
+        "CANCELADO": "Cancelado"
+      }
+    },
+    "table": {
+      "upcoming": "Próximos 7 dias",
+      "patient": "Paciente",
+      "type": "Tipo",
+      "datetime": "Data e horário",
+      "status": "Status",
+      "professional": "Profissional"
+    },
+    "form": {
+      "titleNew": "Adicionar atendimento",
+      "titleEdit": "Editar atendimento",
+      "patient": "Paciente",
+      "type": "Tipo",
+      "area": "Área/Especialidade",
+      "professional": "Profissional",
+      "professionalPlaceholder": "Selecione ou deixe em branco para informar depois",
+      "location": "Local",
+      "datetime": "Data e horário",
+      "status": "Status",
+      "notes": "Notas adicionais",
+      "attachments": "Links de arquivos",
+      "attachmentsHint": "Cole URLs válidas (Drive, imagens, etc.)",
+      "reminders": "Lembretes",
+      "reminderAdd": "Adicionar lembrete",
+      "reminderMinutes": "Minutos antes",
+      "reminderChannel": "Canal",
+      "submitCreate": "Salvar atendimento",
+      "submitUpdate": "Atualizar atendimento"
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

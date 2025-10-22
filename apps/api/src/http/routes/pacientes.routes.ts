@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { Paciente } from "@agenda-amiga/shared";
 
 import { container } from "../../container";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -9,8 +10,8 @@ pacientesRouter.get(
   "/tutores/:tutorId/pacientes",
   asyncHandler(async (req, res) => {
     const { tutorId } = req.params;
-    const output = await container.usecases.listarPacientesPorTutor.execute({ tutorId });
-    res.json(output);
+    const pacientes = (await container.usecases.listarPacientesPorTutor.execute(tutorId)) as Paciente[];
+    res.json({ pacientes: pacientes.map((paciente) => paciente.snapshot) });
   })
 );
 

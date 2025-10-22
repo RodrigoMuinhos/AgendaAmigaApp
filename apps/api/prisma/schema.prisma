@@ -2,14 +2,14 @@
 
 generator client {
   provider = "prisma-client-js"
-  // se preferir o client em node_modules/@prisma/client, remova esta linha:
+  // Se preferir o client em node_modules/@prisma/client, remova a linha abaixo
   output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  // Para Prisma <= 5.10, se usar, descomente:
+  // Se usar, descomente:
   // directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
@@ -28,58 +28,128 @@ enum DoseStatus {
   ATRASADO
 }
 
+enum TipoAtendimento {
+  CONSULTA
+  EXAME
+  TERAPIA
+}
+
+enum StatusAtendimento {
+  AGENDADO
+  REALIZADO
+  FALTOU
+  CANCELADO
+}
+
+enum CanalLembrete {
+  PUSH
+  EMAIL
+  WHATSAPP
+}
+
+enum NutritionMealType {
+  CAFE
+  LANCHE
+  ALMOCO
+  JANTAR
+  EXTRA
+}
+
+enum NutritionFoodGroup {
+  CEREAIS_TUBERCULOS
+  PROTEINA
+  VEGETAL
+  FRUTA
+  GORDURA_BOA
+  OUTRO
+}
+
+enum NutritionTexture {
+  LIQUIDO
+  AMASSADO
+  PICADO
+  SOLIDO
+}
+
+enum MealPeriod {
+  MORNING
+  LUNCH
+  AFTERNOON
+  DINNER
+}
+
 // ========================
 // Models
 // ========================
 
 model pacientes {
-  id                      String   @id @db.Text
-  tutor_id                String   @db.Text
-  nome_completo           String   @db.Text
-  condicoes               String[] @db.Text @default([])
-  alergias                String[] @db.Text @default([])
-  plano_saude_operadora   String?  @db.Text
-  plano_saude_numero      String?  @db.Text
-  plano_saude_validade    DateTime? @db.Timestamptz(6)
-  plano_saude_arquivado   Boolean  @default(false)
-  criado_em               DateTime @default(now()) @db.Timestamptz(6)
-  atualizado_em           DateTime @updatedAt @db.Timestamptz(6)
+  id                    String    @id @db.Text
+  tutor_id              String    @db.Text
+  nome_completo         String    @db.Text
+  condicoes             String[]  @default([]) @db.Text
+  alergias              String[]  @default([]) @db.Text
+  plano_saude_operadora String?   @db.Text
+  plano_saude_numero    String?   @db.Text
+  plano_saude_validade  DateTime? @db.Timestamptz(6)
+  plano_saude_arquivado Boolean   @default(false)
+  criado_em             DateTime  @default(now()) @db.Timestamptz(6)
+  atualizado_em         DateTime  @updatedAt @db.Timestamptz(6)
 
-  medicamentos medicamentos[]
+  // Relações
+  medicamentos        medicamentos[]
+  atendimentos        atendimentos[] // ← back-relation que faltava
+  nutritionMeals      NutritionMealEntry[]
+  nutritionChecklists NutritionDailyChecklist[]
+  nutritionReactions  NutritionReaction[]
+  nutritionSettings   NutritionFeedSettings?
 
   @@map("pacientes")
 }
 
+model profissionais {
+  id            String   @id @db.Text
+  nome          String   @db.Text
+  especialidade String?  @db.Text
+  telefone      String?  @db.Text
+  criado_em     DateTime @default(now()) @db.Timestamptz(6)
+  atualizado_em DateTime @updatedAt @db.Timestamptz(6)
+
+  atendimentos atendimentos[]
+
+  @@map("profissionais")
+}
+
 model medicamentos {
-  id                      String       @id @db.Text
-  paciente_id             String       @db.Text
-  nome                    String       @db.Text
-  dosagem                 Decimal      @db.Decimal(10,3)
-  unidade_dosagem         String       @db.Text
-  ativo                   Boolean      @default(true)
-  esquema_tipo            EsquemaTipo?
-  esquema_timezone        String?      @db.Text
-  esquema_periodo_inicio  DateTime?    @db.Timestamptz(6)
-  esquema_periodo_fim     DateTime?    @db.Timestamptz(6)
-  esquema_horarios        String[]     @db.Text     @default([])
-  esquema_dias_semana     Int[]        @db.SmallInt @default([])
-  criado_em               DateTime     @default(now()) @db.Timestamptz(6)
-  atualizado_em           DateTime     @updatedAt @db.Timestamptz(6)
+  id                     String       @id @db.Text
+  paciente_id            String       @db.Text
+  nome                   String       @db.Text
+  dosagem                Decimal      @db.Decimal(10, 3)
+  unidade_dosagem        String       @db.Text
+  ativo                  Boolean      @default(true)
+  esquema_tipo           EsquemaTipo?
+  esquema_timezone       String?      @db.Text
+  esquema_periodo_inicio DateTime?    @db.Timestamptz(6)
+  esquema_periodo_fim    DateTime?    @db.Timestamptz(6)
+  esquema_horarios       String[]     @default([]) @db.Text
+  esquema_dias_semana    Int[]        @default([]) @db.SmallInt
+  criado_em              DateTime     @default(now()) @db.Timestamptz(6)
+  atualizado_em          DateTime     @updatedAt @db.Timestamptz(6)
 
-  paciente   pacientes   @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
-  dose_logs  dose_logs[]
+  paciente  pacientes   @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
+  dose_logs dose_logs[]
 
+  @@index([paciente_id])
   @@map("medicamentos")
 }
 
 model dose_logs {
-  id                String      @id @db.Text
-  medicamento_id    String      @db.Text
-  horario_previsto  DateTime    @db.Timestamptz(6)
-  status            DoseStatus
-  horario_real      DateTime?   @db.Timestamptz(6)
-  criado_em         DateTime    @default(now()) @db.Timestamptz(6)
-  atualizado_em     DateTime    @updatedAt @db.Timestamptz(6)
+  id               String     @id @db.Text
+  medicamento_id   String     @db.Text
+  horario_previsto DateTime   @db.Timestamptz(6)
+  status           DoseStatus
+  horario_real     DateTime?  @db.Timestamptz(6)
+  criado_em        DateTime   @default(now()) @db.Timestamptz(6)
+  atualizado_em    DateTime   @updatedAt @db.Timestamptz(6)
 
   medicamento medicamentos @relation(fields: [medicamento_id], references: [id], onDelete: Cascade)
 
@@ -87,16 +157,292 @@ model dose_logs {
   @@map("dose_logs")
 }
 
+model atendimentos {
+  id              String            @id @db.Text
+  paciente_id     String            @db.Text
+  tipo            TipoAtendimento
+  area            String?           @db.Text
+  profissional_id String?           @db.Text
+  local           String?           @db.Text
+  data_hora       DateTime          @db.Timestamptz(6)
+  status          StatusAtendimento @default(AGENDADO)
+  notas           String?           @db.Text
+  anexos_url      String[]          @default([]) @db.Text
+  criado_em       DateTime          @default(now()) @db.Timestamptz(6)
+  atualizado_em   DateTime          @updatedAt @db.Timestamptz(6)
+
+  paciente     pacientes      @relation(fields: [paciente_id], references: [id], onDelete: Cascade)
+  profissional profissionais? @relation(fields: [profissional_id], references: [id])
+  lembretes    lembretes[]
+
+  @@index([paciente_id, data_hora], map: "idx_atendimentos_paciente_data")
+  @@map("atendimentos")
+}
+
+model lembretes {
+  id             String        @id @db.Text
+  atendimento_id String        @db.Text
+  minutos_antes  Int
+  canal          CanalLembrete
+  criado_em      DateTime      @default(now()) @db.Timestamptz(6)
+  atualizado_em  DateTime      @updatedAt @db.Timestamptz(6)
+
+  atendimento atendimentos @relation(fields: [atendimento_id], references: [id], onDelete: Cascade)
+
+  @@index([atendimento_id])
+  @@map("lembretes")
+}
+
 model share_links {
-  id             String    @id @db.Text
-  tutor_id       String    @db.Text
-  token          String    @unique @db.Text
-  escopo         Json      @db.JsonB
-  expiracao      DateTime  @db.Timestamptz(6)
-  revogado       Boolean   @default(false)
-  criado_em      DateTime  @default(now()) @db.Timestamptz(6)
-  atualizado_em  DateTime  @updatedAt @db.Timestamptz(6)
-  ultimo_acesso  DateTime? @db.Timestamptz(6)
+  id            String    @id @db.Text
+  tutor_id      String    @db.Text
+  token         String    @unique @db.Text
+  escopo        Json      @db.JsonB
+  expiracao     DateTime  @db.Timestamptz(6)
+  revogado      Boolean   @default(false)
+  criado_em     DateTime  @default(now()) @db.Timestamptz(6)
+  atualizado_em DateTime  @updatedAt @db.Timestamptz(6)
+  ultimo_acesso DateTime? @db.Timestamptz(6)
 
   @@map("share_links")
+}
+
+model familias {
+  id                         String            @id @db.Text
+  nome                       String            @db.Text
+  cep                        String?           @db.Text
+  endereco                   String?           @db.Text
+  bairro                     String?           @db.Text
+  cidade                     String?           @db.Text
+  estado                     String?           @db.Text
+  cuidador_principal         String?           @db.Text
+  relacao_cuidador_principal String?           @db.Text
+  contato                    String?           @db.Text
+  telefone_cuidador          String?           @db.Text
+  foco_cuidado               String?           @db.Text
+  observacoes                String?           @db.Text
+  criado_em                  DateTime          @default(now()) @db.Timestamptz(6)
+  atualizado_em              DateTime          @updatedAt @db.Timestamptz(6)
+
+  membros     familia_membros[]
+  cuidadores  cuidadores[]
+  tratamentos tratamentos[]
+
+  @@map("familias")
+}
+
+model familia_membros {
+  id               String   @id @db.Text
+  familia_id       String   @db.Text
+  nome             String   @db.Text
+  data_nascimento  DateTime @db.Date
+  documento        String?  @db.Text
+  cep              String?  @db.Text
+  numero_endereco  String?  @db.Text
+  endereco         String?  @db.Text
+  bairro           String?  @db.Text
+  cidade           String?  @db.Text
+  estado           String?  @db.Text
+  avatar           String?  @db.Text
+  historico_medico String?  @db.Text
+  limitacoes       String?  @db.Text
+  alergias         String?  @db.Text
+  peso             String?  @db.Text
+  altura           String?  @db.Text
+  imc              String?  @db.Text
+  necessidades     String?  @db.Text
+  criado_em        DateTime @default(now()) @db.Timestamptz(6)
+  atualizado_em    DateTime @updatedAt @db.Timestamptz(6)
+
+  familia familias @relation(fields: [familia_id], references: [id], onDelete: Cascade)
+
+  @@index([familia_id], map: "idx_familia_membros_familia")
+  @@map("familia_membros")
+}
+
+model cuidadores {
+  id            String   @id @db.Text
+  familia_id    String   @db.Text
+  nome          String   @db.Text
+  relacao       String?  @db.Text
+  telefone      String?  @db.Text
+  criado_em     DateTime @default(now()) @db.Timestamptz(6)
+  atualizado_em DateTime @updatedAt @db.Timestamptz(6)
+
+  familia familias @relation(fields: [familia_id], references: [id], onDelete: Cascade)
+
+  @@index([familia_id], map: "idx_cuidadores_familia")
+  @@map("cuidadores")
+}
+
+model tratamentos {
+  id            String    @id @db.Text
+  familia_id    String    @db.Text
+  nome          String    @db.Text
+  dose          String    @db.Text
+  horario       String    @db.Text
+  instrucoes    String?   @db.Text
+  proxima_dose  DateTime? @db.Timestamptz(6)
+  criado_em     DateTime  @default(now()) @db.Timestamptz(6)
+  atualizado_em DateTime  @updatedAt @db.Timestamptz(6)
+
+  familia familias @relation(fields: [familia_id], references: [id], onDelete: Cascade)
+
+  @@index([familia_id], map: "idx_tratamentos_familia")
+  @@map("tratamentos")
+}
+
+
+// ========================
+// Nutrição
+// ========================
+
+model NutritionMealEntry {
+  id            String            @id @default(cuid()) @db.Text
+  childId       String            @map("paciente_id") @db.Text
+  day           DateTime          @map("dia") @db.Date
+  mealType      NutritionMealType @map("tipo")
+  acceptance    Int?              @map("aceitacao_media") @db.SmallInt
+  notes         String?           @map("observacoes") @db.Text
+  criado_em     DateTime          @default(now()) @db.Timestamptz(6)
+  atualizado_em DateTime          @updatedAt @db.Timestamptz(6)
+
+  child pacientes           @relation(fields: [childId], references: [id], onDelete: Cascade, map: "nutrition_meal_entry_child_fk")
+  items NutritionMealItem[]
+
+  @@unique([childId, day, mealType], map: "nutrition_meal_entry_unique")
+  @@map("nutrition_meal_entries")
+}
+
+model NutritionMealItem {
+  id           String             @id @default(cuid()) @db.Text
+  mealId       String             @map("refeicao_id") @db.Text
+  foodItemId   String?            @map("alimento_id") @db.Text
+  customName   String?            @map("nome_personalizado") @db.Text
+  foodGroup    NutritionFoodGroup @map("grupo_alimentar")
+  quantity     String?            @map("quantidade") @db.Text
+  texture      NutritionTexture   @map("textura")
+  acceptance   Int                @map("aceitacao") @db.SmallInt
+  observations String?            @map("observacoes") @db.Text
+  criado_em    DateTime           @default(now()) @db.Timestamptz(6)
+
+  meal NutritionMealEntry @relation(fields: [mealId], references: [id], onDelete: Cascade, map: "nutrition_meal_item_meal_fk")
+  food NutritionFoodItem? @relation(fields: [foodItemId], references: [id], map: "nutrition_meal_item_food_fk")
+
+  @@index([mealId])
+  @@map("nutrition_meal_items")
+}
+
+model NutritionFoodItem {
+  id            String             @id @default(cuid()) @db.Text
+  name          String             @unique @map("nome") @db.Text
+  group         NutritionFoodGroup @map("grupo")
+  criado_em     DateTime           @default(now()) @db.Timestamptz(6)
+  atualizado_em DateTime           @updatedAt @db.Timestamptz(6)
+
+  items     NutritionMealItem[]
+  reactions NutritionReaction[]
+
+  @@map("nutrition_food_items")
+}
+
+model NutritionReaction {
+  id              String   @id @default(cuid()) @db.Text
+  childId         String   @map("paciente_id") @db.Text
+  occurredOn      DateTime @map("data") @db.Date
+  description     String   @map("descricao") @db.Text
+  severity        Int      @map("severidade") @db.SmallInt
+  relatedFoodId   String?  @map("alimento_id") @db.Text
+  relatedFoodName String?  @map("alimento_manual") @db.Text
+  notes           String?  @map("observacoes") @db.Text
+  criado_em       DateTime @default(now()) @db.Timestamptz(6)
+  atualizado_em   DateTime @updatedAt @db.Timestamptz(6)
+
+  child       pacientes          @relation(fields: [childId], references: [id], onDelete: Cascade, map: "nutrition_reaction_child_fk")
+  relatedFood NutritionFoodItem? @relation(fields: [relatedFoodId], references: [id], map: "nutrition_reaction_food_fk")
+
+  @@index([childId, occurredOn], map: "idx_nutrition_reactions_child_date")
+  @@map("nutrition_reactions")
+}
+
+model NutritionDailyChecklist {
+  id                String   @id @default(cuid()) @db.Text
+  childId           String   @map("paciente_id") @db.Text
+  day               DateTime @map("dia") @db.Date
+  offeredLegume     Boolean  @default(false) @map("ofereceu_legume")
+  introducedNewFood Boolean  @default(false) @map("introduziu_novo")
+  offeredWater      Boolean  @default(false) @map("ofereceu_agua")
+  notes             String?  @map("observacoes") @db.Text
+  criado_em         DateTime @default(now()) @db.Timestamptz(6)
+  atualizado_em     DateTime @updatedAt @db.Timestamptz(6)
+
+  child pacientes @relation(fields: [childId], references: [id], onDelete: Cascade, map: "nutrition_checklist_child_fk")
+
+  @@unique([childId, day], map: "nutrition_checklist_unique")
+  @@map("nutrition_daily_checklists")
+}
+
+model NutritionFeedSettings {
+  id                String   @id @default(cuid()) @db.Text
+  childId           String   @unique @map("paciente_id") @db.Text
+  honeyAlertEnabled Boolean  @default(true) @map("alerta_mel_habilitado")
+  sugarAlertEnabled Boolean  @default(true) @map("alerta_acucar_habilitado")
+  notes             String?  @map("observacoes") @db.Text
+  criado_em         DateTime @default(now()) @db.Timestamptz(6)
+  atualizado_em     DateTime @updatedAt @db.Timestamptz(6)
+
+  child pacientes @relation(fields: [childId], references: [id], onDelete: Cascade, map: "nutrition_settings_child_fk")
+
+  @@map("nutrition_feed_settings")
+}
+
+// ========================
+// Hábitos alimentares gerais (fora do módulo nutricional acima)
+// ========================
+
+model MealEntry {
+  id        String     @id @default(cuid())
+  userId    String
+  date      DateTime   @db.Date
+  period    MealPeriod
+  items     Json
+  note      String?    @db.VarChar(160)
+  createdAt DateTime   @default(now())
+
+  @@index([userId, date])
+  @@map("meal_entries")
+}
+
+model Hydration {
+  id        String   @id @default(cuid())
+  userId    String
+  dateTime  DateTime
+  amountMl  Int      @default(200)
+  createdAt DateTime @default(now())
+
+  @@index([userId, dateTime])
+  @@map("hydrations")
+}
+
+model FruitIntake {
+  id        String   @id @default(cuid())
+  userId    String
+  dateTime  DateTime
+  kind      String?  @db.VarChar(60)
+  createdAt DateTime @default(now())
+
+  @@index([userId, dateTime])
+  @@map("fruit_intakes")
+}
+
+model Preferences {
+  userId      String   @id
+  lactoseFree Boolean  @default(false)
+  glutenFree  Boolean  @default(false)
+  halalKosher Boolean  @default(false)
+  tipsTone    String   @default("simple")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("nutrition_preferences")
 }

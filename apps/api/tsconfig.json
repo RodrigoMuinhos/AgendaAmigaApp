@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-"compilerOptions": {
+  "compilerOptions": {
     "target": "ES2022",
     "module": "CommonJS",
     "moduleResolution": "Node",
@@ -9,9 +9,13 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node"],
+    "types": ["vitest", "node"],
     "outDir": "dist",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@agenda-amiga/shared": ["../../packages/shared/src/index.ts"],
+      "@agenda-amiga/shared/*": ["../../packages/shared/src/*"]
+    }
   },
   "include": ["src"]
 }

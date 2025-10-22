@@ -4,6 +4,7 @@ import { PostgresDoseLogRepository } from "./infra/repositories/PostgresDoseLogR
 import { PostgresMedicamentoRepository } from "./infra/repositories/PostgresMedicamentoRepository";
 import { PostgresPacienteRepository } from "./infra/repositories/PostgresPacienteRepository";
 import { PostgresShareLinkRepository } from "./infra/repositories/PostgresShareLinkRepository";
+import { PostgresNutritionRepository } from "./infra/repositories/PostgresNutritionRepository";
 
 class SystemClock implements Clock {
   nowUTC(): Date {
@@ -27,6 +28,7 @@ const pacienteRepository = new PostgresPacienteRepository();
 const medicamentoRepository = new PostgresMedicamentoRepository();
 const doseLogRepository = new PostgresDoseLogRepository();
 const shareLinkRepository = new PostgresShareLinkRepository();
+const nutritionRepository = new PostgresNutritionRepository();
 
 const listarPacientesPorTutor = new ListarPacientesPorTutor(pacienteRepository);
 const confirmarTomadaDose = new ConfirmarTomadaDose(doseLogRepository, clock);
@@ -40,6 +42,7 @@ export const container = {
     medicamento: medicamentoRepository,
     doseLog: doseLogRepository,
     shareLink: shareLinkRepository,
+    nutrition: nutritionRepository,
   },
   usecases: {
     listarPacientesPorTutor,

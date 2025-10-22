@@ -1,0 +1,42 @@
+name: API Tests
+
+on:
+  push:
+    paths:
+      - "apps/api/**"
+      - "packages/shared/**"
+      - ".github/workflows/ci-api-tests.yml"
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - "packages/shared/**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build shared
+        run: npm run build:shared
+
+      - name: Run API tests
+        run: npm run test:api
+
+      - name: Upload coverage (artefact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-coverage
+          path: apps/api/coverage

@@ -1,0 +1,365 @@
+{
+  "app": {
+    "name": "Agenda Amiga",
+    "tagline": "Family caregiving made simple.",
+    "language": "Language",
+    "languagePt": "Portuguese",
+    "languageEn": "English",
+    "easyMode": "Easy Mode",
+    "easyModeDescription": "Fewer fields, clear language.",
+    "voice": "Listen",
+    "voiceText": "Agenda Amiga guides you through daily care with simple steps.",
+    "skipToContent": "Skip to main content",
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode",
+    "expandControls": "Expand header",
+    "collapseControls": "Collapse header"
+  },
+  "nav": {
+    "home": "Home",
+    "caderneta": "Child record",
+    "children": "Children",
+    "care": "Care",
+    "family": "Families",
+    "treatments": "Treatments",
+    "routine": "Today",
+    "alerts": "Alerts",
+    "gastroReport": "Gastrointestinal report",
+    "aria": "Main navigation",
+    "collapseMenu": "Collapse menu",
+    "expandMenu": "Expand menu",
+    "toggleMenu": "Toggle menu",
+    "care": "Care"
+  },
+  "footer": {
+    "mission": "Rodrigo Muinhos Corporete © {{year}} • Digital solutions for family care.",
+    "accessibility": "Accessible: AA/AAA contrast, visible focus and audio support."
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong. Please try again.",
+    "retry": "Try again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "select": "Select",
+    "add": "Add",
+    "next": "Next",
+    "previous": "Back",
+    "finish": "Finish",
+    "draftSaved": "Draft saved.",
+    "draftLoaded": "Draft loaded.",
+    "draftCleared": "Draft removed."
+  },
+  "validation": {
+    "required": "This field is required.",
+    "minLength": "Type at least {{count}} characters.",
+    "invalidPostalCode": "ZIP code not found or invalid."
+  },
+  "home": {
+    "hero": {
+      "title": "Coordinate care with confidence",
+      "subtitle": "Agenda Amiga centralizes families, medicines and alerts with clear language."
+    },
+    "cards": {
+      "children": {
+        "title": "Children",
+        "description": "Register children and keep essential data up to date."
+      },
+      "family": {
+        "title": "👩‍👧 Family",
+        "description": "Register who receives and provides care."
+      },
+      "treatments": {
+        "title": "💊 Medicines",
+        "description": "Record meds, doses and times in seconds."
+      },
+      "routine": {
+        "title": "⏰ Today’s routine",
+        "description": "Check the daily checklist and mark what is done."
+      },
+      "alerts": {
+        "title": "🔔 Alerts",
+        "description": "Track reminders for exams, documents and pending items."
+      },
+      "care": {
+        "title": "🩺 Care",
+        "description": "Organize appointments, exams and therapies in one place."
+      }
+    },
+    "quickStats": {
+      "title": "Quick stats",
+      "families": "{{count}} registered families",
+      "doses": "{{count}} doses today",
+      "shares": "{{count}} shared caregivers",
+      "empty": "Add a family to see the summary."
+    },
+    "actions": {
+      "startOnboarding": "Start family registration",
+      "addChild": "Add child"
+    }
+  },
+  "onboarding": {
+    "title": "Guided onboarding",
+    "subtitle": "Six quick steps to organize care.",
+    "voiceSummary": "Educational onboarding in six steps. Save as draft whenever you need.",
+    "resumeDraft": "Resume draft",
+    "removeDraft": "Discard draft",
+    "saveDraft": "Save draft",
+    "stepStatus": "Step {{current}} of {{total}}",
+    "actions": {
+      "back": "Back",
+      "next": "Next step",
+      "submit": "Complete onboarding"
+    },
+    "stepper": {
+      "who": "Care team",
+      "basics": "Basics",
+      "health": "Health",
+      "guardians": "Guardians",
+      "routine": "Routine",
+      "files": "Files"
+    },
+    "steps": {
+      "who": {
+        "title": "Care team",
+        "description": "Identify the family and main caregiver.",
+        "fields": {
+          "familyName": "Family name",
+          "caregiverName": "Primary caregiver name",
+          "caregiverRelation": "Relation to the person cared for",
+          "caregiverPhone": "Phone / WhatsApp"
+        }
+      },
+      "basics": {
+        "title": "Basic information",
+        "description": "Essential data for the person receiving care.",
+        "fields": {
+          "personName": "Full name",
+          "birthdate": "Birthdate",
+          "document": "ID document",
+          "address": "Main address"
+        }
+      },
+      "health": {
+        "title": "Health",
+        "description": "Main daily health needs.",
+        "fields": {
+          "conditions": "Health conditions",
+          "allergies": "Allergies",
+          "medications": "Current medicines",
+          "supports": "Supports and equipment"
+        }
+      },
+      "guardians": {
+        "title": "Guardians",
+        "description": "Who can help? Register trusted contacts.",
+        "fields": {
+          "primaryGuardian": "Primary guardian",
+          "backupGuardian": "Backup guardian",
+          "emergencyPhone": "Emergency phone",
+          "whatsAppInvite": "Invite caregiver via WhatsApp"
+        }
+      },
+      "routine": {
+        "title": "Routine",
+        "description": "Important day-to-day reminders.",
+        "fields": {
+          "wakeTime": "Wake-up time",
+          "sleepTime": "Bedtime",
+          "meals": "Main meals",
+          "medicationName": "Medicine name",
+          "medicationDose": "Dose",
+          "medicationSchedule": "Schedule"
+        }
+      },
+      "files": {
+        "title": "Files",
+        "description": "Important documents and records.",
+        "fields": {
+          "documents": "Key documents",
+          "notes": "Extra notes"
+        }
+      }
+    },
+    "feedback": {
+      "saved": "Draft saved.",
+      "submitted": "Onboarding completed successfully!"
+    }
+  },
+  "family": {
+    "title": "Caregiving families",
+    "subtitle": "Organize essential information about the care network.",
+    "create": "Add family",
+    "empty": "No families registered yet.",
+    "members": "{{count}} members",
+    "caregivers": "{{count}} caregivers",
+    "steps": {
+      "caregiver": "Caregiver information",
+      "patient": "Patient information",
+      "medical": "Medical details"
+    },
+    "form": {
+      "title": "Family",
+      "basicInfo": "Basic information",
+      "members": "People cared for",
+      "careTeam": "Support network",
+      "fields": {
+        "familyName": "Family name",
+        "postalCode": "ZIP Code",
+        "address": "Street",
+        "neighborhood": "Neighborhood",
+        "city": "City",
+        "state": "State",
+        "primaryCaregiver": "Primary caregiver",
+        "notes": "Notes",
+        "caregiverPhone": "Phone / WhatsApp"
+      },
+      "memberFields": {
+        "name": "Full name (patient)",
+        "avatar": "Patient photo",
+        "addAvatar": "Add photo",
+        "changeAvatar": "Change photo",
+        "removeAvatar": "Remove photo",
+        "birthdate": "Birthdate",
+        "document": "CPF / ID",
+        "postalCode": "ZIP Code",
+        "addressNumber": "Number",
+        "address": "Street",
+        "neighborhood": "Neighborhood",
+        "city": "City",
+        "state": "State",
+        "medicalHistory": "Medical history",
+        "limitations": "Limitations",
+        "allergies": "Allergies",
+        "weight": "Weight (kg)",
+        "height": "Height (cm)",
+        "imc": "BMI",
+        "needs": "Needs"
+      },
+      "caregiverFields": {
+        "name": "Name",
+        "relation": "Relation",
+        "phone": "Phone"
+      },
+      "addMember": "Add person",
+      "addCaregiver": "Add caregiver",
+      "submit": "Save family",
+      "defaultName": "Caregiving family"
+    }
+  },
+  "treatments": {
+    "title": "Treatments & medications",
+    "subtitle": "Manage medicines, doses and responsible people.",
+    "empty": "No treatments registered yet.",
+    "doseForm": {
+      "title": "Add dose",
+      "fields": {
+        "name": "Medicine name",
+        "dose": "Dose",
+        "schedule": "Schedule",
+        "instructions": "Instructions"
+      },
+      "submit": "Save dose"
+    },
+    "list": {
+      "doseCount": "{{count}} doses",
+      "nextDose": "Next dose: {{time}}"
+    }
+  },
+  "routine": {
+    "todayTitle": "Today’s routine",
+    "subtitle": "Mark what is complete. Alerts update automatically.",
+    "empty": "No activities for today.",
+    "complete": "Mark as done",
+    "markAll": "Mark all",
+    "resetAll": "Clear selection",
+    "progress": "{{completed}} of {{total}} completed"
+  },
+  "alerts": {
+    "title": "Alerts & reminders",
+    "subtitle": "Track important pending items and notifications.",
+    "empty": "No pending alerts.",
+    "markDone": "Mark as resolved",
+    "snooze": "Remind me later",
+    "count": "{{pending}} pending of {{total}}",
+    "types": {
+      "medication": "Medication",
+      "appointment": "Appointment",
+      "document": "Document",
+      "other": "Other"
+    }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "We couldn’t find what you’re looking for. Check the address or return home.",
+    "cta": "Go back home"
+  },
+  "care": {
+    "title": "Care",
+    "subtitle": "Track appointments, exams and therapies for your family.",
+    "empty": "No care entries yet.",
+    "actions": {
+      "newConsultation": "New appointment",
+      "newExam": "New exam",
+      "newTherapy": "New therapy",
+      "newCare": "New care entry"
+    },
+    "filters": {
+      "allTypes": "All types",
+      "types": {
+        "CONSULTA": "Appointments",
+        "EXAME": "Exams",
+        "TERAPIA": "Therapies"
+      },
+      "status": {
+        "AGENDADO": "Scheduled",
+        "REALIZADO": "Completed",
+        "FALTOU": "Missed",
+        "CANCELADO": "Cancelled"
+      }
+    },
+    "table": {
+      "upcoming": "Next 7 days",
+      "patient": "Patient",
+      "type": "Type",
+      "datetime": "Date & time",
+      "status": "Status",
+      "professional": "Professional"
+    },
+    "form": {
+      "titleNew": "Add care entry",
+      "titleEdit": "Edit care entry",
+      "patient": "Patient",
+      "type": "Type",
+      "area": "Area/Specialty",
+      "professional": "Professional",
+      "professionalPlaceholder": "Select or leave blank to fill later",
+      "location": "Location",
+      "datetime": "Date & time",
+      "status": "Status",
+      "notes": "Notes",
+      "attachments": "Attachment links",
+      "attachmentsHint": "Paste valid URLs (Drive, images, etc.)",
+      "reminders": "Reminders",
+      "reminderAdd": "Add reminder",
+      "reminderMinutes": "Minutes before",
+      "reminderChannel": "Channel",
+      "submitCreate": "Save entry",
+      "submitUpdate": "Update entry"
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+

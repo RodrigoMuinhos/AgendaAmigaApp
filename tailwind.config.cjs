@@ -10,14 +10,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: withOpacity('--color-background'),
+        background: withOpacity('--color-bg'),
         surface: withOpacity('--color-surface'),
         border: withOpacity('--color-border'),
+        text: withOpacity('--color-text'),
         muted: withOpacity('--color-muted'),
-        foreground: withOpacity('--color-foreground'),
         primary: {
           DEFAULT: withOpacity('--color-primary'),
-          hover: withOpacity('--color-primary-hover'),
+          dark: withOpacity('--color-primary-dark'),
         },
         accent: withOpacity('--color-accent'),
         success: withOpacity('--color-success'),
@@ -25,24 +25,28 @@ module.exports = {
         danger: withOpacity('--color-danger'),
       },
       borderRadius: {
+        xs: 'var(--radius-xs)',
         sm: 'var(--radius-sm)',
         md: 'var(--radius-md)',
         lg: 'var(--radius-lg)',
-        xl: 'var(--radius-xl)',
+        pill: 'var(--radius-pill)',
         DEFAULT: 'var(--radius-md)',
       },
-      boxShadow: {
-        soft: 'var(--shadow-soft)',
-        elevated: 'var(--shadow-elevated)',
+      fontFamily: {
+        sans: [
+          '"Source Sans 3"',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Segoe UI"',
+          'sans-serif',
+        ],
       },
-      spacing: {
-        gapxs: 'var(--space-gap-xs)',
-        gapsm: 'var(--space-gap-sm)',
-        gapmd: 'var(--space-gap-md)',
-        gaplg: 'var(--space-gap-lg)',
-        gapxl: 'var(--space-gap-xl)',
+      boxShadow: {
+        soft: '0 6px 18px rgba(14, 23, 38, 0.08)',
+        elevated: '0 12px 32px rgba(14, 23, 38, 0.12)',
       },
     },
   },
-  darkMode: ['class', '[data-theme="dark"]'],
+  plugins: [],
 };

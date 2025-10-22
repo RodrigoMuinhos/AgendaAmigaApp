@@ -1,28 +1,49 @@
 {
-    "name": "agenda-amiga",
-    "version": "0.1.0",
-    "private": true,
-    "workspaces": [
-        "apps/*",
-        "packages/*"
-    ],
-    "devDependencies": {
-        "concurrently": "^9.2.1",
-        "tsx": "^4.20.6"
-    },
-    "scripts": {
-        "build": "npm run build -w @agenda-amiga/shared && npm run build -w @agenda-amiga/api",
-        "dev:api": "npm run dev -w @agenda-amiga/api",
-        "start:api": "npm run start -w @agenda-amiga/api",
-        "build:shared": "npm run build -w @agenda-amiga/shared",
-        "shared:dev": "npm run dev -w @agenda-amiga/shared",
-        "api:dev": "npm run dev -w @agenda-amiga/api",
-        "web:dev": "npm run dev -w @agenda-amiga/frontend",
-        "web:dev:lan": "npm run dev:lan -w @agenda-amiga/frontend",
-        "web:preview:lan": "npm run preview:lan -w @agenda-amiga/frontend"
-    },
-    "dependencies": {
-        "axios": "^1.12.2",
-        "lucide-react": "^0.544.0"
-    }
+  "name": "agenda-amiga",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@11.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "// ====== PRE HOOKS ======": "",
+    "predev": "npm run shared:build",
+
+    "// ====== SHARED ======": "",
+    "shared:build": "npm run build -w @agenda-amiga/shared",
+    "shared:dev": "npm run dev -w @agenda-amiga/shared",
+
+    "// ====== API ======": "",
+    "api:build": "npm run build -w @agenda-amiga/api",
+    "api:dev": "npm run dev -w @agenda-amiga/api",
+    "api:start": "npm run start -w @agenda-amiga/api",
+    "api:test": "npm run test -w @agenda-amiga/api",
+    "api:test:cov": "npm run test:cov -w @agenda-amiga/api",
+
+    "// ====== WEB (Frontend) ======": "",
+    "web:build": "npm run build -w @agenda-amiga/frontend",
+    "web:dev": "npm run dev -w @agenda-amiga/frontend",
+    "web:dev:lan": "npm run dev:lan -w @agenda-amiga/frontend",
+    "web:preview:lan": "npm run preview:lan -w @agenda-amiga/frontend",
+
+    "// ====== TOP-LEVEL TASKS ======": "",
+    "build": "npm run shared:build && npm run api:build && npm run web:build",
+    "dev": "concurrently -n SHARED,API,WEB -c yellow,cyan,magenta \"npm run shared:dev\" \"npm run api:dev\" \"npm run web:dev\"",
+    "dev:lan": "concurrently -n SHARED,API,WEB -c yellow,cyan,magenta \"npm run shared:dev\" \"npm run api:dev\" \"npm run web:dev:lan\"",
+
+    "// ====== UTIL ======": "",
+    "clean": "npx rimraf node_modules packages/**/dist apps/**/dist package-lock.json",
+    "versions": "node -v && npm -v"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.20.6"
+  }
 }

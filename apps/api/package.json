@@ -2,35 +2,49 @@
   "name": "@agenda-amiga/api",
   "version": "0.1.0",
   "private": true,
+  "type": "commonjs",
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:cov": "vitest --run --coverage",
+    "prepare": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^6.16.3",
+    "@agenda-amiga/shared": "file:../../packages/shared",
+    "@prisma/client": "^6.17.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "pg": "^8.13.1",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.0"
+    "swagger-ui-express": "^5.0.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.0",
     "@types/pg": "^8.6.6",
+    "@types/supertest": "^2.0.16",
     "@types/swagger-jsdoc": "^6.0.1",
     "@types/swagger-ui-express": "^4.1.6",
+    "@vitest/coverage-v8": "^1.6.0",
     "nodemon": "^3.1.10",
-    "prisma": "^6.16.3",
+    "prisma": "^6.17.1",
+    "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^1.6.0"
   },
   "engines": {
     "node": ">=20"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
   }
 }
