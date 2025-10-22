@@ -76,3 +76,5 @@ __tests__/e2e/videos/
 !docker-compose.yml
 !apps/api/prisma/migrations/
 !apps/api/prisma/schema.prisma
+
+node_modules_tmp_cleanup/
