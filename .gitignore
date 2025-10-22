@@ -1,6 +1,78 @@
-﻿node_modules/
+# ========================================
+# ?? AgendaAmiga Monorepo Ignore Rules
+# Covers: Node, Vite, Prisma, Docker, VSCode, pnpm/npm workspaces
+# ========================================
+
+# Node modules and build outputs
+node_modules/
 dist/
 build/
+.cache/
+out/
+.next/
+coverage/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript build artifacts
+*.tsbuildinfo
+
+# Local environment files
 .env
-.env.local
-.expo/
+.env.*
+!.env.example
+
+# Prisma generated files (client is re-generated)
+apps/api/generated/
+apps/api/prisma/dev.db
+apps/api/prisma/test.db
+*.db-journal
+
+# Docker
+docker-compose.override.yml
+docker/.env
+docker/*.env
+*.pid
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VSCode
+.vscode/
+.history/
+*.code-workspace
+
+# Vite
+*.local
+vite.config.local.*
+vite.config.ts.timestamp*
+
+# React / Next build outputs
+apps/frontend/.next/
+apps/frontend/out/
+apps/frontend/.vercel/
+
+# Logs and temp
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+
+# Local testing / uploads
+uploads/
+__tests__/e2e/screenshots/
+__tests__/e2e/videos/
+
+# ========================================
+# ? Allow important examples
+# ========================================
+!.env.example
+!docker-compose.yml
+!apps/api/prisma/migrations/
+!apps/api/prisma/schema.prisma
