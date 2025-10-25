@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  agendaamiga_db:
+    image: postgres:15
+    container_name: agendaamiga_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agenda_amiga_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - agendaamiga_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d agenda_amiga_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  agendaamiga_data:

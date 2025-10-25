@@ -1,5 +1,22 @@
-version: "3.8"
 services:
+  agendaamiga_db:
+    image: postgres:16
+    container_name: agendaamiga_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agenda_amiga_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - agenda_amiga_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   api:
     build:
       context: .
@@ -7,15 +24,31 @@ services:
     container_name: agenda-amiga-api-dev
     environment:
       NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@agendaamiga_db:5432/agenda_amiga_db
+      DIRECT_URL: postgresql://postgres:postgres@agendaamiga_db:5432/agenda_amiga_db
+      SHADOW_DATABASE_URL: postgresql://postgres:postgres@agendaamiga_db:5432/agenda_amiga_db_shadow
     ports:
-      - "3000:3000"
-    command: npm run dev:api
+      - "3000:3333"
+      - "5555:5555"
+    depends_on:
+      agendaamiga_db:
+        condition: service_healthy
     volumes:
       - .:/app
       - agenda_amiga_node_modules:/app/node_modules
       - agenda_amiga_api_node_modules:/app/apps/api/node_modules
       - agenda_amiga_shared_node_modules:/app/packages/shared/node_modules
+    command: >
+      sh -c "
+      if [ ! -d /app/node_modules ] || [ -z \"$(ls -A /app/node_modules 2>/dev/null)\" ] ||
+         [ ! -d /app/apps/api/node_modules ] || [ -z \"$(ls -A /app/apps/api/node_modules 2>/dev/null)\" ] ||
+         [ ! -d /app/packages/shared/node_modules ] || [ -z \"$(ls -A /app/packages/shared/node_modules 2>/dev/null)\" ];
+      then npm ci; fi &&
+      npm run dev -w @agenda-amiga/api
+      "
+
 volumes:
   agenda_amiga_node_modules:
   agenda_amiga_api_node_modules:
   agenda_amiga_shared_node_modules:
+  agenda_amiga_db_data:

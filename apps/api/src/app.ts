@@ -7,18 +7,24 @@ import { notFoundHandler } from "./http/middlewares/notFoundHandler";
 import { errorHandler } from "./http/middlewares/errorHandler";
 
 function resolveCorsOrigin() {
-  const configuredOrigin = process.env.CORS_ORIGIN?.split(",")
+  const raw = process.env.FRONTEND_ORIGIN;
+  if (!raw || raw.trim() === "*") {
+    return raw ? raw.trim() : "http://localhost:5173";
+  }
+
+  const origins = raw
+    .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
 
-  if (!configuredOrigin || configuredOrigin.length === 0 || configuredOrigin.includes("*")) {
-    return "*";
+  if (origins.length === 0) {
+    return "http://localhost:5173";
   }
 
-  return configuredOrigin;
+  return origins.length === 1 ? origins[0] : origins;
 }
 
-export function createServer() {
+export function makeApp() {
   const app = express();
 
   app.set("trust proxy", true);
@@ -26,11 +32,15 @@ export function createServer() {
   app.use(
     cors({
       origin: resolveCorsOrigin(),
-      credentials: false,
+      credentials: true,
     }),
   );
 
   app.use(express.json());
+
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok" });
+  });
 
   app.use(router);
 

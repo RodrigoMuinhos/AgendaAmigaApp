@@ -14,6 +14,18 @@ CREATE TABLE IF NOT EXISTS pacientes (
   atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS criancas (
+  id TEXT PRIMARY KEY,
+  tutor_id TEXT NOT NULL,
+  nome TEXT NOT NULL,
+  nascimento_iso TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_criancas_tutor ON criancas (tutor_id, criado_em);
+
 CREATE TABLE IF NOT EXISTS medicamentos (
   id TEXT PRIMARY KEY,
   paciente_id TEXT NOT NULL REFERENCES pacientes(id) ON DELETE CASCADE,

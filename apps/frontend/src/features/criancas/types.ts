@@ -1,8 +1,15 @@
-export type Sexo = 'M' | 'F' | 'Outro';
+export type Sexo = 'M' | 'F';
 
 export type ParentescoResponsavel = 'Mae' | 'Pai' | 'Tutor(a)' | 'Avo/Avo' | 'Outro';
 
 export type TipoSanguineo = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | undefined;
+
+export type NeurodivergenciaTipo = 'TEA' | 'TDAH';
+
+export type Neurodivergencia = {
+  tipo: NeurodivergenciaTipo;
+  grau?: string;
+};
 
 export type Responsavel = {
   nome: string;
@@ -18,10 +25,13 @@ export type Crianca = {
   responsavel: Responsavel;
   cartaoSUS?: string;
   cpf?: string;
+  convenioOperadora?: string;
+  convenioNumero?: string;
   tipoSanguineo?: TipoSanguineo;
   alergias?: string[];
   doencasCronicas?: string[];
   medicacoes?: string[];
+  neurodivergencias?: Neurodivergencia[];
   pediatra?: string;
   avatarUrl?: string;
   criadoEmISO: string;

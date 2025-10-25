@@ -1,6 +1,7 @@
 export const endpoints = {
   families: '/familias',
   patients: '/pacientes',
+  children: '/criancas',
   treatments: '/tratamentos',
   dosesByDate: (date: string) => `/doses?date=${encodeURIComponent(date)}`,
   alerts: '/alertas',

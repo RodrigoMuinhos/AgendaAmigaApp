@@ -1,8 +1,8 @@
-import InputMask from 'react-input-mask';
 import { Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { FormField } from '../../../components/FormField';
 import { Input } from '../../../components/ui/input';
+import { MaskedInput } from '../../../components/ui/masked-input';
 import type { StepProps } from './types';
 
 export function StepWho({ form, easyMode }: StepProps) {
@@ -44,14 +44,13 @@ export function StepWho({ form, easyMode }: StepProps) {
           control={control}
           name="caregiverPhone"
           render={({ field }) => (
-            <InputMask
+            <MaskedInput
               mask="(99) 99999-9999"
-              maskChar={null}
               value={field.value ?? ''}
               onChange={(event) => field.onChange(event.target.value)}
               onBlur={field.onBlur}
             >
-              {(inputProps: any) => (
+              {(inputProps) => (
                 <Input
                   {...inputProps}
                   id="caregiverPhone"
@@ -61,7 +60,7 @@ export function StepWho({ form, easyMode }: StepProps) {
                   placeholder="(00) 00000-0000"
                 />
               )}
-            </InputMask>
+            </MaskedInput>
           )}
         />
       </FormField>

@@ -14,11 +14,22 @@ import { TabVisaoGeral } from '../features/criancas/pages/tabs/TabVisaoGeral';
 import { TabCrescimento } from '../features/criancas/pages/tabs/TabCrescimento';
 import { TabVacinacao } from '../features/criancas/pages/tabs/TabVacinacao';
 import { TabConsultas } from '../features/criancas/pages/tabs/TabConsultas';
-import { GastroReportPage } from '../features/reports/GastroReportPage';
+import { DailyCareReportPage } from '../features/reports/DailyCareReportPage';
 import { AppShell } from '../layout/AppShell';
+import { LoginPage } from '../pages/Login';
+import { LoginSuccessPage } from '../pages/LoginSuccess';
 import { NotFoundPage } from '../pages/NotFound';
+import DebugApi from '../pages/DebugApi';
 
 export const router = createBrowserRouter([
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
+    path: '/login-success',
+    element: <LoginSuccessPage />,
+  },
   {
     element: <AppShell />,
     children: [
@@ -109,12 +120,16 @@ export const router = createBrowserRouter([
         element: <TodayRoutinePage />,
       },
       {
-        path: '/reports/gastro',
-        element: <GastroReportPage />,
+        path: '/reports/daily-care',
+        element: <DailyCareReportPage />,
       },
       {
         path: '/alerts',
         element: <AlertsPage />,
+      },
+      {
+        path: '/debug-api',
+        element: <DebugApi />,
       },
       {
         path: '*',

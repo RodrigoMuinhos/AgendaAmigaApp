@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
 import type { TFunction } from 'i18next';
 import { Controller, useWatch, type UseFormReturn } from 'react-hook-form';
-import InputMask from 'react-input-mask';
 import { Input } from '../../../components/ui/input';
 import { Select } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
+import { MaskedInput } from '../../../components/ui/masked-input';
 import type { FamilyFormValues } from '../utils/familyFormSchema';
 import { WizardField } from './WizardField';
 
@@ -60,14 +60,13 @@ export function FamilyAddressStep({ form, t }: FamilyAddressStepProps) {
           control={form.control}
           name="postalCode"
           render={({ field }) => (
-            <InputMask
+            <MaskedInput
               mask="99999-999"
-              maskChar={null}
               value={field.value ?? ''}
               onChange={(event) => field.onChange(event.target.value)}
               onBlur={field.onBlur}
             >
-              {(inputProps: any) => (
+              {(inputProps) => (
                 <Input
                   {...inputProps}
                   ref={field.ref}
@@ -75,7 +74,7 @@ export function FamilyAddressStep({ form, t }: FamilyAddressStepProps) {
                   placeholder="00000-000"
                 />
               )}
-            </InputMask>
+            </MaskedInput>
           )}
         />
       </WizardField>
@@ -131,14 +130,13 @@ export function FamilyAddressStep({ form, t }: FamilyAddressStepProps) {
           control={form.control}
           name="caregiverPhone"
           render={({ field }) => (
-            <InputMask
+            <MaskedInput
               mask="(99) 99999-9999"
-              maskChar={null}
               value={field.value ?? ''}
               onChange={(event) => field.onChange(event.target.value)}
               onBlur={field.onBlur}
             >
-              {(inputProps: any) => (
+              {(inputProps) => (
                 <Input
                   {...inputProps}
                   ref={field.ref}
@@ -146,7 +144,7 @@ export function FamilyAddressStep({ form, t }: FamilyAddressStepProps) {
                   placeholder="(00) 00000-0000"
                 />
               )}
-            </InputMask>
+            </MaskedInput>
           )}
         />
       </WizardField>

@@ -2,7 +2,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import { Controller } from 'react-hook-form';
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
-import InputMask from 'react-input-mask';
+import { MaskedInput } from '../../../components/ui/masked-input';
 import type { FamilyFormValues } from '../FamilyFormWizard';
 import { WizardField } from './WizardField';
 
@@ -69,14 +69,13 @@ export function CaregiverStep({
           control={form.control}
           name="caregiverPhone"
           render={({ field }) => (
-            <InputMask
+            <MaskedInput
               mask="(99) 99999-9999"
-              maskChar={null}
               value={field.value ?? ''}
               onChange={(event) => field.onChange(event.target.value)}
               onBlur={field.onBlur}
             >
-              {(inputProps: any) => (
+              {(inputProps) => (
                 <Input
                   {...inputProps}
                   ref={field.ref}
@@ -84,7 +83,7 @@ export function CaregiverStep({
                   placeholder="(00) 00000-0000"
                 />
               )}
-            </InputMask>
+            </MaskedInput>
           )}
         />
       </WizardField>
@@ -95,4 +94,3 @@ export function CaregiverStep({
     </div>
   );
 }
-

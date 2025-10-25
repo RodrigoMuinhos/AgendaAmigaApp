@@ -1,4 +1,5 @@
 import { useRef, type ChangeEvent } from 'react';
+import { Camera, XCircle } from 'lucide-react';
 
 type AvatarPickerProps = {
   value?: string;
@@ -13,11 +14,12 @@ export function AvatarPicker({
   value,
   onChange,
   onBlur,
-  addLabel,
-  changeLabel,
+  addLabel: _addLabel,
+  changeLabel: _changeLabel,
   removeLabel,
 }: AvatarPickerProps) {
   const inputId = useRef(`avatar-${Math.random().toString(36).slice(2)}`);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -39,36 +41,39 @@ export function AvatarPicker({
   };
 
   return (
-    <div className="flex flex-col items-center gap-3 md:items-start">
-      <div className="relative h-20 w-20 overflow-hidden rounded-full border border-[rgb(var(--color-border))] bg-[rgba(var(--color-border),0.1)]">
+    <div className="relative flex items-center justify-center">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="group relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-[rgba(var(--color-border),0.5)] bg-[rgba(var(--color-surface),0.9)] shadow-soft transition hover:border-[rgb(var(--color-primary))] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(30,136,229,0.35)]"
+      >
         {value ? (
           <img src={value} alt="" className="h-full w-full object-cover" />
         ) : (
-          <span className="flex h-full w-full items-center justify-center text-xs text-muted">
-            {addLabel}
-          </span>
+          <Camera className="h-8 w-8 text-[rgba(var(--color-text),0.45)] transition group-hover:text-[rgb(var(--color-primary))]" aria-hidden />
         )}
-      </div>
-      <label
-        htmlFor={inputId.current}
-        className="cursor-pointer text-sm font-semibold text-[rgb(var(--color-primary))] hover:underline"
-      >
-        {value ? changeLabel : addLabel}
-      </label>
+      </button>
+
       <input
         id={inputId.current}
         type="file"
         accept="image/*"
         className="sr-only"
+        ref={inputRef}
         onBlur={onBlur}
         onChange={handleFileChange}
       />
+
       {value ? (
-        <button type="button" onClick={handleRemove} className="text-xs text-muted hover:underline">
-          {removeLabel}
+        <button
+          type="button"
+          onClick={handleRemove}
+          className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[rgba(255,255,255,0.9)] text-[rgb(var(--color-danger))] shadow-soft transition hover:bg-[rgb(var(--color-danger))] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(30,136,229,0.35)]"
+          aria-label={removeLabel}
+        >
+          <XCircle className="h-4 w-4" aria-hidden />
         </button>
       ) : null}
     </div>
   );
 }
-

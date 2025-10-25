@@ -1,7 +1,9 @@
-import { Bell, SlidersHorizontal } from 'lucide-react';
+import { Bell, LogOut, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { HealthProbe } from '../HealthProbe';
+import { env } from '../core/config/env';
 import { EasyModeToggle } from '../components/EasyModeToggle';
 import { LanguageToggle } from '../components/LanguageToggle';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -9,9 +11,9 @@ import { VoiceButton } from '../components/VoiceButton';
 
 export function Header() {
   const { t, i18n } = useTranslation();
-  const voiceLang = i18n.language.startsWith('en') ? 'en-US' : 'pt-BR';
   const [isMenuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const voiceLang = i18n.language.startsWith('en') ? 'en-US' : 'pt-BR';
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -38,6 +40,11 @@ export function Header() {
       document.removeEventListener('keydown', handleKey);
     };
   }, [isMenuOpen]);
+
+  const handleLogout = () => {
+    setMenuOpen(false);
+    window.location.assign(env.logoutRedirect);
+  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-[rgba(var(--color-border),0.4)] bg-[rgba(var(--color-surface),0.9)] backdrop-blur-xl transition">
@@ -82,12 +89,67 @@ export function Header() {
               </button>
 
               {isMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.75rem)] z-40 w-72 rounded-3xl border border-[rgba(var(--color-border),0.4)] bg-[rgb(var(--color-surface))] p-4 shadow-elevated">
-                  <div className="flex flex-col gap-4">
-                    <VoiceButton text={t('app.voiceText')} label={t('app.voice')} lang={voiceLang} />
-                    <EasyModeToggle />
+                <div className="absolute right-0 top-[calc(100%+0.75rem)] z-40 w-72 rounded-[28px] border border-[rgba(var(--color-border),0.3)] bg-[rgb(var(--color-surface))] p-4 shadow-elevated">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div
+                      className="flex flex-col items-center gap-2 rounded-[26px] border border-[rgba(var(--color-border),0.2)] bg-[rgb(var(--color-surface))] px-3 py-4 text-[rgba(var(--color-text),0.75)] shadow-soft transition cursor-default select-none"
+                      role="status"
+                      aria-live="polite"
+                      aria-label="API"
+                    >
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[rgba(var(--color-border),0.25)] bg-[rgba(var(--color-primary),0.1)] text-[rgb(var(--color-primary))] shadow-soft transition">
+                        <HealthProbe size={24} />
+                      </span>
+                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[rgba(var(--color-text),0.6)]">
+                        API
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-2 rounded-[26px] border border-[rgba(var(--color-border),0.2)] bg-[rgb(var(--color-surface))] px-3 py-4 text-[rgba(var(--color-text),0.75)] shadow-soft transition">
+                      <VoiceButton
+                        variant="compact"
+                        text={t('app.voiceText', 'Texto de demonstração da Agenda Amiga')}
+                        label={t('app.voice', 'Ouvir')}
+                        lang={voiceLang}
+                        className="!h-14 !w-14 !rounded-full !border !border-[rgba(var(--color-border),0.2)] !bg-[rgba(var(--color-primary),0.12)] !text-[rgb(var(--color-primary))] !shadow-soft hover:!border-[rgba(var(--color-primary),0.35)] hover:!bg-[rgba(var(--color-primary),0.18)]"
+                      />
+                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[rgba(var(--color-text),0.6)]">
+                        {t('app.voice', 'Ouvir')}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col items-center gap-2 rounded-[26px] border border-[rgba(var(--color-border),0.2)] bg-[rgb(var(--color-surface))] px-3 py-4 text-[rgba(var(--color-text),0.75)] shadow-soft transition">
+                      <ThemeToggle
+                        variant="compact"
+                        className="!h-14 !w-14 !rounded-full !border !border-[rgba(var(--color-border),0.2)] !bg-[rgba(var(--color-primary),0.1)] !text-[rgb(var(--color-primary))] !shadow-soft hover:!border-[rgba(var(--color-primary),0.35)] hover:!bg-[rgba(var(--color-primary),0.18)]"
+                      />
+                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[rgba(var(--color-text),0.6)]">
+                        {t('app.theme', 'Tema')}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="group flex flex-col items-center gap-2 rounded-[26px] border border-[rgba(var(--color-border),0.2)] bg-[rgb(var(--color-surface))] px-3 py-4 text-[rgba(var(--color-text),0.75)] shadow-soft transition hover:border-[rgba(var(--color-primary),0.45)] hover:bg-[rgba(var(--color-primary),0.12)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(30,136,229,0.35)]"
+                    >
+                      <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[rgba(var(--color-border),0.2)] bg-[rgba(var(--color-primary),0.12)] text-[rgb(var(--color-primary))] shadow-soft transition group-hover:border-[rgba(var(--color-primary),0.45)] group-hover:bg-[rgba(var(--color-primary),0.18)]">
+                        <LogOut className="h-5 w-5" aria-hidden />
+                      </span>
+                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[rgba(var(--color-text),0.6)]">
+                        {t('app.logout', 'Logout')}
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="mt-5 space-y-4 rounded-[26px] border border-[rgba(var(--color-border),0.18)] bg-[rgb(var(--color-surface))] p-4 shadow-soft">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-sm font-semibold text-[rgba(var(--color-text),0.75)]">
+                        {t('app.easyMode')}
+                      </span>
+                      <EasyModeToggle variant="compact" />
+                    </div>
                     <LanguageToggle />
-                    <ThemeToggle />
                   </div>
                 </div>
               ) : null}

@@ -14,7 +14,9 @@ export function NovaCriancaPage() {
   const handleSubmit = async (dados: CriancaCreateInput) => {
     const criada = await criar(dados);
     if (criada) {
-      navigate('/criancas');
+      navigate(`/criancas/${criada.id}`, {
+        state: { sucesso: 'Crianca cadastrada com sucesso!' },
+      });
     }
   };
 

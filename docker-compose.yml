@@ -1,12 +1,98 @@
-version: "3.8"
 services:
+  agendaamiga_db:
+    image: postgres:16
+    container_name: agendaamiga_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: agenda_amiga_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - agendaamiga_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d agenda_amiga_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   api:
-    image: agenda-amiga:latest
     build:
       context: .
-      target: production
-    ports:
-      - "3000:3000"
+      dockerfile: apps/api/Dockerfile.dev
+    container_name: agenda-amiga-api-dev
+    working_dir: /app/apps/api
     environment:
-      NODE_ENV: production
-    restart: unless-stopped
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 3333
+      HUSKY: "0"
+      DATABASE_URL: postgresql://postgres:postgres@agendaamiga_db:5432/agenda_amiga_db
+      DIRECT_URL: postgresql://postgres:postgres@agendaamiga_db:5432/agenda_amiga_db
+      SHADOW_DATABASE_URL: postgresql://postgres:postgres@agendaamiga_db:5432/agenda_amiga_db_shadow
+    command: >
+      sh -c "
+        set -eo pipefail
+        if [ ! -f /app/.npm-installed ]; then
+          cd /app && npm ci --legacy-peer-deps
+          touch /app/.npm-installed
+        fi
+        cd /app/apps/api
+        result=$$(PGPASSWORD=postgres psql -h agendaamiga_db -U postgres -d postgres -tAc \"SELECT 1 FROM pg_database WHERE datname='agenda_amiga_db_shadow'\" | tr -d '[:space:]')
+        if [ \"$$result\" != \"1\" ]; then
+          PGPASSWORD=postgres psql -h agendaamiga_db -U postgres -d postgres -c \"CREATE DATABASE agenda_amiga_db_shadow\"
+        fi
+        npx prisma generate --schema=/app/apps/api/prisma/schema.prisma
+        npx prisma migrate dev --name init --schema=/app/apps/api/prisma/schema.prisma
+        npx prisma studio --schema=/app/apps/api/prisma/schema.prisma --hostname 0.0.0.0 --port 5555 --browser none &
+        npm run dev --workspace @agenda-amiga/api
+      "
+    volumes:
+      - .:/app
+      - agendaamiga_node_modules:/app/node_modules
+      - agendaamiga_api_node_modules:/app/apps/api/node_modules
+    ports:
+      - "3000:3333"
+      - "5555:5555"
+    depends_on:
+      agendaamiga_db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3333/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile.dev
+    container_name: agenda-amiga-web-dev
+    working_dir: /app/apps/frontend
+    environment:
+      VITE_API_URL: http://localhost:3000
+    command: >
+      sh -c "
+        set -e
+        if [ ! -f /app/.npm-installed ]; then
+          cd /app && npm ci --legacy-peer-deps
+          touch /app/.npm-installed
+        fi
+        cd /app/apps/frontend &&
+        npm run dev --workspace @agenda-amiga/frontend -- --host
+      "
+    volumes:
+      - .:/app
+      - agendaamiga_node_modules:/app/node_modules
+      - agendaamiga_frontend_node_modules:/app/apps/frontend/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  agendaamiga_node_modules:
+  agendaamiga_api_node_modules:
+  agendaamiga_frontend_node_modules:
+  agendaamiga_db_data:

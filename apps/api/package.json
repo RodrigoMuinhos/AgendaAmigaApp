@@ -4,21 +4,23 @@
   "private": true,
   "type": "commonjs",
   "main": "dist/index.js",
-  "scripts": {
-    "dev": "nodemon",
-    "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/index.js",
-    "test": "vitest run --reporter=dot",
-    "test:watch": "vitest",
-    "test:cov": "vitest --run --coverage",
-    "db:validate": "prisma validate --schema=prisma/schema.prisma",
-    "db:migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
-    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
-    "db:push": "prisma db push --schema=prisma/schema.prisma",
-    "db:studio": "prisma studio --schema=prisma/schema.prisma",
-    "prisma:gen": "prisma generate --schema=prisma/schema.prisma",
-    "prepare": "prisma generate"
-  },
+"scripts": {
+  "prepare": "husky || true",
+  "dev": "nodemon -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts",
+  "build": "tsc -p tsconfig.json",
+  "typecheck": "tsc --noEmit -p tsconfig.json",
+  "start": "node dist/index.js",
+  "test": "vitest run --reporter=dot",
+  "test:watch": "vitest",
+  "test:cov": "vitest --run --coverage",
+  "db:validate": "prisma validate --schema=prisma/schema.prisma",
+  "db:migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
+  "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
+  "db:push": "prisma db push --schema=prisma/schema.prisma",
+  "db:studio": "prisma studio --schema=prisma/schema.prisma",
+  "prisma:gen": "prisma generate --schema=prisma/schema.prisma"
+},
+
   "dependencies": {
     "@agenda-amiga/shared": "file:../../packages/shared",
     "@prisma/client": "^6.17.1",

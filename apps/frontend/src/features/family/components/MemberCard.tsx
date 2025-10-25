@@ -1,11 +1,11 @@
 import type { TFunction } from 'i18next';
 import { useEffect, useRef } from 'react';
 import { Controller, useWatch, type UseFormReturn } from 'react-hook-form';
-import InputMask from 'react-input-mask';
 import { Trash2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
+import { MaskedInput } from '../../../components/ui/masked-input';
 import type { FamilyFormValues, ViaCepResponse } from '../utils/familyFormSchema';
 import { AvatarPicker } from './AvatarPicker';
 import { WizardField } from './WizardField';
@@ -146,14 +146,13 @@ export function MemberCard({
               control={control}
               name={`members.${index}.document` as const}
               render={({ field }) => (
-                <InputMask
+                <MaskedInput
                   mask="999.999.999-99"
-                  maskChar={null}
                   value={field.value ?? ''}
                   onChange={(event) => field.onChange(event.target.value)}
                   onBlur={field.onBlur}
                 >
-                  {(inputProps: any) => (
+                  {(inputProps) => (
                     <Input
                       {...inputProps}
                       ref={field.ref}
@@ -161,7 +160,7 @@ export function MemberCard({
                       placeholder="000.000.000-00"
                     />
                   )}
-                </InputMask>
+                </MaskedInput>
               )}
             />
           </WizardField>
@@ -171,14 +170,13 @@ export function MemberCard({
               control={control}
               name={`members.${index}.postalCode` as const}
               render={({ field }) => (
-                <InputMask
+                <MaskedInput
                   mask="99999-999"
-                  maskChar={null}
                   value={field.value ?? ''}
                   onChange={(event) => field.onChange(event.target.value)}
                   onBlur={field.onBlur}
                 >
-                  {(inputProps: any) => (
+                  {(inputProps) => (
                     <Input
                       {...inputProps}
                       ref={field.ref}
@@ -186,7 +184,7 @@ export function MemberCard({
                       placeholder="00000-000"
                     />
                   )}
-                </InputMask>
+                </MaskedInput>
               )}
             />
           </WizardField>

@@ -5,9 +5,10 @@ import { Button } from './ui/button';
 
 type ThemeToggleProps = {
   variant?: 'default' | 'compact';
+  className?: string;
 };
 
-export function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
+export function ThemeToggle({ variant = 'default', className }: ThemeToggleProps) {
   const { theme, toggleTheme } = useTheme();
   const { t } = useTranslation();
   const isDark = theme === 'dark';
@@ -21,6 +22,7 @@ export function ThemeToggle({ variant = 'default' }: ThemeToggleProps) {
       onClick={toggleTheme}
       aria-pressed={isDark}
       title={isDark ? t('app.lightMode') : t('app.darkMode')}
+      className={className}
     >
       {isDark ? <Sun className="h-6 w-6" aria-hidden /> : <Moon className="h-6 w-6" aria-hidden />}
       {!isCompact ? (

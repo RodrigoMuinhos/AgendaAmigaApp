@@ -9,7 +9,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { useCriancasStore } from '../store';
@@ -65,7 +65,11 @@ function AvatarGrande({ crianca }: { crianca: Crianca }) {
 export function FichaCriancaPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [notFound, setNotFound] = useState(false);
+  const sucessoInicial =
+    (location.state as { sucesso?: string } | undefined)?.sucesso || undefined;
+  const [mensagemSucesso, setMensagemSucesso] = useState<string | undefined>(sucessoInicial);
 
   const { crianca, buscarPorId, carregando, setSelecionada } = useCriancasStore((state) => ({
     crianca: id ? state.criancas.find((item) => item.id === id) : undefined,
@@ -78,6 +82,13 @@ export function FichaCriancaPage() {
     if (!id) return;
     setSelecionada(id);
   }, [id, setSelecionada]);
+
+  useEffect(() => {
+    if (sucessoInicial) {
+      setMensagemSucesso(sucessoInicial);
+      navigate(location.pathname, { replace: true });
+    }
+  }, [sucessoInicial, navigate, location.pathname]);
 
   useEffect(() => {
     let ativa = true;

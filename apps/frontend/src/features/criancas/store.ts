@@ -1,12 +1,11 @@
 import { create } from 'zustand';
 import {
-  buscarCriancaPorIdMock,
-  criarCriancaMock,
-  atualizarCriancaMock,
-  hidratarCriancas,
-  listarCriancasMock,
-  removerCriancaMock,
-} from './api.mock';
+  atualizarCrianca,
+  buscarCriancaPorId,
+  criarCrianca,
+  listarCriancas,
+  removerCrianca,
+} from './api';
 import type {
   Caderneta,
   Crianca,
@@ -153,22 +152,13 @@ type CriancasState = {
   ) => ProximaDose[];
 };
 
-const gerarId = () => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return Math.random().toString(36).slice(2);
-};
-
 export const useCriancasStore = create<CriancasState>((set, get) => {
-  const criancasHidratadas = hidratarCriancas();
   const selecionadaInicial = lerSelecionada();
-  const selecionadaExiste = criancasHidratadas.some((item) => item.id === selecionadaInicial);
 
   return {
-    criancas: criancasHidratadas,
+    criancas: [],
     cadernetas: hidratarCadernetas(),
-    selecionadaId: selecionadaExiste ? selecionadaInicial : undefined,
+    selecionadaId: selecionadaInicial,
     carregando: false,
     erro: undefined,
     limparErro: () => set({ erro: undefined }),
@@ -184,7 +174,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
     listar: async () => {
       set({ carregando: true, erro: undefined });
       try {
-        const dados = await listarCriancasMock();
+        const dados = await listarCriancas();
         set((estadoAtual) => {
           const selecionadaId = estadoAtual.selecionadaId;
           const selecionadaExisteApos = dados.some((item) => item.id === selecionadaId);
@@ -205,14 +195,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
     criar: async (dados) => {
       set({ carregando: true, erro: undefined });
       try {
-        const agora = new Date().toISOString();
-        const novo: Crianca = {
-          ...dados,
-          id: gerarId(),
-          criadoEmISO: agora,
-          atualizadoEmISO: agora,
-        };
-        await criarCriancaMock(novo);
+        const novo = await criarCrianca(dados);
         set((estadoAtual) => {
           const criancasAtualizadas = [...estadoAtual.criancas, novo];
           persistirSelecionada(novo.id);
@@ -236,16 +219,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
         if (!existente) {
           throw new Error('Crianca nao encontrada');
         }
-        const atualizado: Crianca = {
-          ...existente,
-          ...dados,
-          responsavel: {
-            ...existente.responsavel,
-            ...dados.responsavel,
-          },
-          atualizadoEmISO: new Date().toISOString(),
-        };
-        await atualizarCriancaMock(atualizado);
+        const atualizado = await atualizarCrianca(id, dados);
         set((estadoAtual) => ({
           criancas: estadoAtual.criancas.map((item) => (item.id === id ? atualizado : item)),
           carregando: false,
@@ -267,7 +241,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
       }
       set({ carregando: true, erro: undefined });
       try {
-        const encontrado = await buscarCriancaPorIdMock(id);
+        const encontrado = await buscarCriancaPorId(id);
         if (encontrado) {
           set((estadoAtual) => ({
             criancas: [...estadoAtual.criancas, encontrado],
@@ -288,11 +262,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
     remover: async (id) => {
       set({ carregando: true, erro: undefined });
       try {
-        const removida = await removerCriancaMock(id);
-        if (!removida) {
-          set({ carregando: false });
-          return false;
-        }
+        await removerCrianca(id);
         set((estadoAtual) => {
           const criancasAtualizadas = estadoAtual.criancas.filter((item) => item.id !== id);
           const { [id]: _removida, ...cadernetasRestantes } = estadoAtual.cadernetas;

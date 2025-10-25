@@ -11,9 +11,23 @@ import type {
   Treatment,
 } from '../types/api';
 
+async function safeRequest<T>(request: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await request();
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.warn('[api] fallback triggered for request', error);
+    }
+    return fallback;
+  }
+}
+
 export async function fetchFamilies() {
-  const response = await api.get<Family[]>(endpoints.families);
-  return response.data;
+  return safeRequest(async () => {
+    const response = await api.get<Family[]>(endpoints.families);
+    return response.data;
+  }, []);
 }
 
 export async function createFamily(payload: Omit<Family, 'id'>) {
@@ -22,8 +36,10 @@ export async function createFamily(payload: Omit<Family, 'id'>) {
 }
 
 export async function fetchTreatments() {
-  const response = await api.get<Treatment[]>(endpoints.treatments);
-  return response.data;
+  return safeRequest(async () => {
+    const response = await api.get<Treatment[]>(endpoints.treatments);
+    return response.data;
+  }, []);
 }
 
 export async function createTreatment(payload: Omit<Treatment, 'id' | 'nextDose' | 'doses'>) {
@@ -32,8 +48,10 @@ export async function createTreatment(payload: Omit<Treatment, 'id' | 'nextDose'
 }
 
 export async function fetchTodayRoutine(date: string) {
-  const response = await api.get<RoutineItem[]>(endpoints.dosesByDate(date));
-  return response.data;
+  return safeRequest(async () => {
+    const response = await api.get<RoutineItem[]>(endpoints.dosesByDate(date));
+    return response.data;
+  }, []);
 }
 
 export async function fetchAlerts() {

@@ -1,5 +1,5 @@
 import { useRef, useState, type ChangeEvent } from 'react';
-import { Button } from '../../../components/ui/button';
+import { Camera, XCircle } from 'lucide-react';
 
 type AvatarUploaderProps = {
   value?: string;
@@ -35,40 +35,19 @@ export function AvatarUploader({ value, onChange }: AvatarUploaderProps) {
   };
 
   return (
-    <div className="flex flex-col items-start gap-3 rounded-2xl border border-dashed border-[rgba(var(--color-border),0.5)] p-4">
-      <div className="flex items-center gap-4">
+    <div className="relative flex items-center justify-center">
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="group relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-[rgba(var(--color-border),0.5)] bg-[rgba(var(--color-surface),0.95)] shadow-soft transition hover:border-[rgb(var(--color-primary))] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(30,136,229,0.35)]"
+      >
         {preview ? (
-          <img
-            src={preview}
-            alt=""
-            className="h-20 w-20 rounded-full object-cover ring-2 ring-[rgba(var(--color-primary),0.4)]"
-          />
+          <img src={preview} alt="" className="h-full w-full object-cover" />
         ) : (
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[rgba(var(--color-primary),0.12)] text-lg font-semibold text-[rgb(var(--color-primary))]">
-            ?
-          </div>
+          <Camera className="h-9 w-9 text-[rgba(var(--color-text),0.45)] transition group-hover:text-[rgb(var(--color-primary))]" aria-hidden />
         )}
-        <div className="space-y-2">
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => inputRef.current?.click()}
-            variant="ghost"
-            className="border-[rgb(var(--color-primary))] text-[rgb(var(--color-primary))]"
-          >
-            {preview ? 'Alterar avatar' : 'Selecionar avatar'}
-          </Button>
-          {preview ? (
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="text-sm font-medium text-red-500 underline focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-200"
-            >
-              Remover
-            </button>
-          ) : null}
-        </div>
-      </div>
+      </button>
+
       <input
         ref={inputRef}
         type="file"
@@ -77,7 +56,17 @@ export function AvatarUploader({ value, onChange }: AvatarUploaderProps) {
         onChange={handleFileChange}
         aria-label="Selecionar avatar"
       />
-      <p className="text-xs text-[rgba(var(--color-text),0.65)]">PNG, JPG ou WEBP ate 2MB.</p>
+
+      {preview ? (
+        <button
+          type="button"
+          onClick={handleRemove}
+          className="absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(255,255,255,0.95)] text-[rgb(var(--color-danger))] shadow-soft transition hover:bg-[rgb(var(--color-danger))] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(30,136,229,0.35)]"
+          aria-label="Remover avatar"
+        >
+          <XCircle className="h-4 w-4" aria-hidden />
+        </button>
+      ) : null}
     </div>
   );
 }

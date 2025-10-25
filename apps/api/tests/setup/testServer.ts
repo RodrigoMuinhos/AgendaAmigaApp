@@ -1,7 +1,7 @@
 import request from "supertest";
 
-import { createApp } from "../../src/app";
+import { makeApp } from "../../src/app";
 
-const app = createApp();
+const app = makeApp();
 
 export const http = () => request(app);

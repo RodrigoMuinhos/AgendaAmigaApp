@@ -9,8 +9,8 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  // Se usar, descomente:
-  // directUrl = env("DATABASE_URL_UNPOOLED")
+  directUrl = env("DIRECT_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 // ========================
@@ -104,6 +104,19 @@ model pacientes {
   nutritionSettings   NutritionFeedSettings?
 
   @@map("pacientes")
+}
+
+model criancas {
+  id             String   @id @db.Text
+  tutor_id       String   @db.Text
+  nome           String   @db.Text
+  nascimento_iso String   @db.Text
+  payload        Json     @db.JsonB
+  criado_em      DateTime @default(now()) @db.Timestamptz(6)
+  atualizado_em  DateTime @updatedAt @db.Timestamptz(6)
+
+  @@index([tutor_id, criado_em], map: "idx_criancas_tutor")
+  @@map("criancas")
 }
 
 model profissionais {

@@ -57,8 +57,8 @@ export function NavRail({ collapsed = false }: { collapsed?: boolean }) {
     },
     { to: '/routine/today', label: t('nav.routine', 'Rotina'), icon: <CalendarCheck className="h-6 w-6" aria-hidden /> },
     {
-      to: '/reports/gastro',
-      label: t('nav.gastroReport', 'Relatorio Gastrointestinal'),
+      to: '/reports/daily-care',
+      label: t('nav.dailyCareReport', 'Relatorio diario de cuidados'),
       icon: <NotebookPen className="h-6 w-6" aria-hidden />,
     },
   ];
