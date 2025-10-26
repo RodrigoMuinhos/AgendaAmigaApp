@@ -5,28 +5,31 @@
   "type": "commonjs",
   "main": "dist/index.js",
   "scripts": {
-    "prepare": "husky || true",
     "dev": "nodemon -r ts-node/register/transpile-only -r tsconfig-paths/register src/index.ts",
+    "prebuild": "npm run db:generate",
     "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "postbuild": "node scripts/normalize-dist.js",
     "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run --reporter=dot",
     "test:watch": "vitest",
     "test:cov": "vitest --run --coverage",
-    "db:validate": "prisma validate --schema=prisma/schema.prisma",
-    "db:migrate:dev": "prisma migrate dev --schema=prisma/schema.prisma",
-    "db:migrate:deploy": "prisma migrate deploy --schema=prisma/schema.prisma",
-    "db:push": "prisma db push --schema=prisma/schema.prisma",
-    "db:studio": "prisma studio --schema=prisma/schema.prisma",
-    "prisma:gen": "prisma generate --schema=prisma/schema.prisma"
+    "db:status": "prisma migrate status",
+    "db:dev": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "render:build": "npm ci && npm run db:generate && npm run build",
+    "render:start": "npm run db:deploy && npm run start"
   },
   "dependencies": {
     "@agenda-amiga/shared": "file:../../packages/shared",
-    "@prisma/client": "^6.17.1",
+    "@prisma/client": "^6.18.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "helmet": "^8.1.0",
+    "express": "^4.21.2",
+    "helmet": "^6.2.0",
     "pg": "^8.13.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
@@ -35,7 +38,6 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
-    "@types/helmet": "^0.0.48",
     "@types/node": "^20.11.0",
     "@types/pg": "^8.6.6",
     "@types/supertest": "^2.0.16",
@@ -43,7 +45,7 @@
     "@types/swagger-ui-express": "^4.1.6",
     "@vitest/coverage-v8": "^1.6.0",
     "nodemon": "^3.1.10",
-    "prisma": "^6.17.1",
+    "prisma": "^6.18.0",
     "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
@@ -52,8 +54,5 @@
   },
   "engines": {
     "node": ">=20"
-  },
-  "prisma": {
-    "schema": "prisma/schema.prisma"
   }
 }
