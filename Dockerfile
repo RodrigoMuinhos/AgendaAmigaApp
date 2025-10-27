@@ -41,7 +41,8 @@ CMD ["node", "-e", "console.log('Use docker compose para subir o serviço em dev
 # Build de produção (builder)#
 ##############################
 FROM base AS builder
-ENV NODE_ENV=production
+# ⚠️ Precisamos de devDependencies para compilar (ts, tipos, vitest, etc.)
+ENV NODE_ENV=development
 
 # Copia TUDO para conseguir resolver workspaces corretamente
 COPY . .
