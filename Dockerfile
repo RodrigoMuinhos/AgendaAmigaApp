@@ -41,7 +41,7 @@ CMD ["node", "-e", "console.log('Use docker compose para subir o serviço em dev
 # Build de produção (builder)#
 ##############################
 FROM base AS builder
-# ⚠️ Precisamos de devDependencies para compilar (ts, tipos, vitest, etc.)
+# Precisamos de devDependencies para compilar (ts, tipos, vitest, etc.)
 ENV NODE_ENV=development
 
 # Copia TUDO para conseguir resolver workspaces corretamente
@@ -90,11 +90,11 @@ COPY package.json package-lock.json* ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
-# 👉 Copia node_modules pronto (resolvido com workspaces) do builder
+# Copia node_modules pronto (resolvido com workspaces) do builder
 COPY --from=builder /app/node_modules ./node_modules
 
-# 👉 Pruna para produção (remove devDeps) respeitando workspaces
-RUN npm prune --omit=dev --workspaces --no-audit --no-fund
+# Poda para produção (remove devDeps)
+RUN npm prune --omit=dev --no-audit --no-fund
 
 # Copia artefatos buildados
 COPY --from=builder /app/apps/api/dist apps/api/dist
@@ -102,6 +102,12 @@ COPY --from=builder /app/packages/shared/dist packages/shared/dist
 
 # (Opcional) Copiar schema do Prisma se a API ler em runtime (e.g. validações)
 COPY apps/api/prisma apps/api/prisma
+
+# 🔗 Garante que @agenda-amiga/shared esteja resolvível em runtime
+# (recria o link em node_modules apontando para packages/shared)
+RUN mkdir -p node_modules/@agenda-amiga && \
+    rm -rf node_modules/@agenda-amiga/shared && \
+    ln -s ../../packages/shared node_modules/@agenda-amiga/shared
 
 # Porta usada em produção
 EXPOSE 3000
