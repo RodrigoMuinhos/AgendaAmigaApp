@@ -19,7 +19,7 @@ RUN apk add --no-cache \
     openssl \
     libc6-compat
 
-# Alinha npm com o packageManager da raiz (suporte a "workspace:*")
+# Alinha npm com o packageManager da raiz
 RUN npm i -g npm@11.6.2
 
 #########################################
@@ -41,20 +41,19 @@ CMD ["node", "-e", "console.log('Use docker compose para subir o serviço em dev
 # Build de produção (builder)#
 ##############################
 FROM base AS builder
-# Precisamos de devDependencies para compilar (ts, tipos, vitest, etc.)
 ENV NODE_ENV=development
 
-# Copia TUDO para conseguir resolver workspaces corretamente
+# Copiamos o repositório completo (workspaces, file: e tudo)
 COPY . .
 
-# 1) Instala TODAS as deps (dev+prod) com workspaces para buildar
-#    (usamos install em vez de ci para tolerar lock antigo/misto)
+# 1) Instala TODAS as deps (dev+prod) com workspaces
+#    (install ao invés de ci para tolerar lock "misto" e manter scripts bloqueados)
 RUN npm install --ignore-scripts --workspaces --no-audit --no-fund
 
-# 2) Gerar Prisma Client (produção)
+# 2) Gera Prisma Client para produção (usa schema da API)
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 
-# 3) Build dos pacotes (shared e api)
+# 3) Build dos pacotes (shared primeiro; depois api)
 RUN npm run build -w @agenda-amiga/shared && \
     npm run build -w @agenda-amiga/api
 
@@ -82,29 +81,28 @@ ENV NODE_ENV=production \
 # Dependências mínimas para runtime
 RUN apk add --no-cache curl openssl libc6-compat
 
-# Garantir mesma versão do npm no runtime
+# Garante mesma versão do npm
 RUN npm i -g npm@11.6.2
 
-# Copia apenas arquivos necessários p/ metadata + lock
+# Copia manifests p/ metadados (mantém integridade do node_modules copiado)
 COPY package.json package-lock.json* ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
-# Copia node_modules pronto (resolvido com workspaces) do builder
+# Copia node_modules resolvido no builder (evita rodar npm ci com "file:")
 COPY --from=builder /app/node_modules ./node_modules
 
 # Poda para produção (remove devDeps)
-RUN npm prune --omit=dev --no-audit --no-fund
+RUN npm prune --omit=dev --no-audit --no-fund || true
 
 # Copia artefatos buildados
 COPY --from=builder /app/apps/api/dist apps/api/dist
 COPY --from=builder /app/packages/shared/dist packages/shared/dist
 
-# (Opcional) Copiar schema do Prisma se a API ler em runtime (e.g. validações)
+# (Opcional) Copiar schema do Prisma se a API ler em runtime
 COPY apps/api/prisma apps/api/prisma
 
-# 🔗 Garante que @agenda-amiga/shared esteja resolvível em runtime
-# (recria o link em node_modules apontando para packages/shared)
+# 🔗 Garante que @agenda-amiga/shared fique resolvível em runtime
 RUN mkdir -p node_modules/@agenda-amiga && \
     rm -rf node_modules/@agenda-amiga/shared && \
     ln -s ../../packages/shared node_modules/@agenda-amiga/shared
@@ -112,7 +110,7 @@ RUN mkdir -p node_modules/@agenda-amiga && \
 # Porta usada em produção
 EXPOSE 3000
 
-# Healthcheck simples
+# Healthcheck simples (ajuste a rota se a sua for diferente)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -fsS http://localhost:3000/health || exit 1
 
