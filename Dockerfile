@@ -111,12 +111,11 @@ COPY package.json package-lock.json* ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
-# Instala SOMENTE deps de prod dos workspaces
-# Se houver lock: npm ci; senão: npm install
+# ⚠️ Instala deps de produção dos WORKSPACES (cria links em node_modules)
 RUN if [ -f package-lock.json ]; then \
-      npm ci --omit=dev --ignore-scripts ; \
+      npm ci --omit=dev --ignore-scripts --workspaces ; \
     else \
-      npm install --omit=dev --ignore-scripts ; \
+      npm install --omit=dev --ignore-scripts --workspaces ; \
     fi
 
 # Copia artefatos buildados
@@ -133,5 +132,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -fsS http://localhost:3000/health || exit 1
 
-# Start da API
+# Start da API (ajuste se seu entrypoint final for outro arquivo)
 CMD ["node", "apps/api/dist/index.js"]
