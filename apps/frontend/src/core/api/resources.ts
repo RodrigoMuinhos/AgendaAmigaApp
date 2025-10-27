@@ -12,6 +12,24 @@ import type {
   Treatment,
 } from '../types/api';
 
+const rawTutorId = (import.meta.env.VITE_TUTOR_ID as string | undefined)?.trim();
+const DEFAULT_TUTOR_ID = rawTutorId && rawTutorId.length > 0 ? rawTutorId : 'demo-tutor';
+
+type TutorParamValue = string | number | boolean | undefined;
+
+function withTutorParams(
+  params: Record<string, TutorParamValue> = {},
+): Record<string, string | number | boolean> {
+  const merged: Record<string, TutorParamValue> = {
+    tutorId: DEFAULT_TUTOR_ID,
+    ...params,
+  };
+
+  return Object.fromEntries(
+    Object.entries(merged).filter(([, value]) => value !== undefined && value !== null),
+  ) as Record<string, string | number | boolean>;
+}
+
 async function safeRequest<T>(request: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await request();
@@ -26,7 +44,9 @@ async function safeRequest<T>(request: () => Promise<T>, fallback: T): Promise<T
 
 export async function fetchFamilies() {
   return safeRequest(async () => {
-    const response = await api.get<Family[]>(endpoints.families);
+    const response = await api.get<Family[]>(endpoints.families, {
+      params: withTutorParams(),
+    });
     return asArray<Family>(response.data);
   }, []);
 }
@@ -36,9 +56,19 @@ export async function createFamily(payload: Omit<Family, 'id'>) {
   return response.data;
 }
 
-export async function fetchTreatments() {
+type TreatmentsQuery = {
+  familyId?: string;
+  childId?: string;
+};
+
+export async function fetchTreatments(params: TreatmentsQuery = {}) {
   return safeRequest(async () => {
-    const response = await api.get<Treatment[]>(endpoints.treatments);
+    const response = await api.get<Treatment[]>(endpoints.treatments, {
+      params: withTutorParams({
+        familyId: params.familyId,
+        childId: params.childId,
+      }),
+    });
     return asArray<Treatment>(response.data);
   }, []);
 }
@@ -48,15 +78,25 @@ export async function createTreatment(payload: Omit<Treatment, 'id' | 'nextDose'
   return response.data;
 }
 
-export async function fetchTodayRoutine(date: string) {
+export async function fetchTodayRoutine(
+  date: string,
+  options: { childId?: string } = {},
+) {
   return safeRequest(async () => {
-    const response = await api.get<RoutineItem[]>(endpoints.dosesByDate(date));
+    const response = await api.get<RoutineItem[]>(endpoints.doses, {
+      params: withTutorParams({
+        date,
+        childId: options.childId,
+      }),
+    });
     return asArray<RoutineItem>(response.data);
   }, []);
 }
 
 export async function fetchAlerts() {
-  const response = await api.get<Alert[]>(endpoints.alerts);
+  const response = await api.get<Alert[]>(endpoints.alerts, {
+    params: withTutorParams(),
+  });
   return asArray<Alert>(response.data);
 }
 
@@ -69,21 +109,24 @@ type AttendancesQuery = {
 };
 
 export async function fetchAttendances(params: AttendancesQuery = {}) {
-  const search = new URLSearchParams();
-  if (params.patientId) search.set('pacienteId', params.patientId);
-  if (params.type) search.set('tipo', params.type);
-  if (params.status) search.set('status', params.status);
-  if (params.from) search.set('from', params.from);
-  if (params.to) search.set('to', params.to);
-  const query = search.toString();
-  const response = await api.get<Attendance[]>(
-    query ? `${endpoints.attendances}?${query}` : endpoints.attendances,
-  );
-  return asArray<Attendance>(response.data);
+  return safeRequest(async () => {
+    const response = await api.get<Attendance[]>(endpoints.attendances, {
+      params: withTutorParams({
+        pacienteId: params.patientId,
+        tipo: params.type,
+        status: params.status,
+        from: params.from,
+        to: params.to,
+      }),
+    });
+    return asArray<Attendance>(response.data);
+  }, []);
 }
 
 export async function fetchAttendanceById(id: string) {
-  const response = await api.get<Attendance>(endpoints.attendanceById(id));
+  const response = await api.get<Attendance>(endpoints.attendanceById(id), {
+    params: withTutorParams(),
+  });
   return response.data;
 }
 
@@ -105,7 +148,9 @@ export async function deleteAttendance(id: string) {
 }
 
 export async function fetchProfessionals() {
-  const response = await api.get<Professional[]>(endpoints.professionals);
+  const response = await api.get<Professional[]>(endpoints.professionals, {
+    params: withTutorParams(),
+  });
   return response.data;
 }
 

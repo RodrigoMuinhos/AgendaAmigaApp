@@ -49,7 +49,13 @@ function toIso(date: string, time: string): string {
 dosesRouter.get(
   "/doses",
   asyncHandler(async (req, res) => {
-    const { date } = querySchema.parse(req.query);
+    const parsed = querySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res.json([]);
+      return;
+    }
+
+    const { date } = parsed.data;
     const targetDate = date ?? new Date().toISOString().slice(0, 10);
 
     const treatmentsResult = await query<TreatmentRow>(
