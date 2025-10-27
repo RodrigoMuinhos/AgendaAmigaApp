@@ -24,7 +24,7 @@
     "render:start": "npm run db:deploy && npm run start"
   },
   "dependencies": {
-    "@agenda-amiga/shared": "workspace:*",
+    "@agenda-amiga/shared": "link:../../packages/shared",
     "@prisma/client": "^6.18.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
