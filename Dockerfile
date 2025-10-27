@@ -22,63 +22,42 @@ RUN apk add --no-cache \
 # Alinha npm com o packageManager da raiz (suporte a "workspace:*")
 RUN npm i -g npm@11.6.2
 
-################################
-# Camada de dependências (NPM) #
-################################
-FROM base AS deps
-
-# Copiamos somente manifests que afetam resolução de deps (melhora cache)
-# O lockfile é opcional (usa * para não falhar se estiver ausente)
-COPY package.json package-lock.json* ./
-COPY apps/api/package.json apps/api/package.json
-COPY packages/shared/package.json packages/shared/package.json
-
-# Instala TODAS as deps do monorepo
-# - Se houver lock: npm ci
-# - Senão: npm install
-# legacy-peer-deps evita travas por peer deps antigas
-RUN if [ -f package-lock.json ]; then \
-      npm ci --legacy-peer-deps ; \
-    else \
-      npm install --legacy-peer-deps ; \
-    fi
-
 #########################################
-# Imagem de desenvolvimento da nossa API#
+# Stage de desenvolvimento (opcional)   #
 #########################################
-FROM deps AS development
+FROM base AS development
 ENV NODE_ENV=development
 
-# Código
+# Código completo (dev usa tudo)
 COPY . .
 
 # Gera Prisma Client (musl) para ambiente dev
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 
-# Portas utilizadas em dev (ajuste conforme seu compose)
-EXPOSE 3000
-EXPOSE 5555
-
-# Em dev, normalmente quem sobe é o docker-compose (scripts npm)
+EXPOSE 3000 5555
 CMD ["node", "-e", "console.log('Use docker compose para subir o serviço em dev')"]
 
 ##############################
 # Build de produção (builder)#
 ##############################
-FROM deps AS builder
+FROM base AS builder
 ENV NODE_ENV=production
 
-# Código
+# Copia TUDO para conseguir resolver workspaces corretamente
 COPY . .
 
-# 1) Gerar Prisma Client (produção)
+# 1) Instala TODAS as deps (dev+prod) com workspaces para buildar
+#    (usamos install em vez de ci para tolerar lock antigo/misto)
+RUN npm install --ignore-scripts --workspaces --no-audit --no-fund
+
+# 2) Gerar Prisma Client (produção)
 RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 
-# 2) Build dos pacotes (ajuste se seus scripts forem outros)
+# 3) Build dos pacotes (shared e api)
 RUN npm run build -w @agenda-amiga/shared && \
     npm run build -w @agenda-amiga/api
 
-# 3) Normaliza a pasta dist da API (em alguns setups o TS gera prefixo apps/api/src)
+# 4) Normaliza a pasta dist da API, se necessário
 RUN if [ -d "apps/api/dist/apps/api/src" ]; then \
       mkdir -p apps/api/dist.tmp && \
       cp -r apps/api/dist/apps/api/src/. apps/api/dist.tmp/ && \
@@ -105,20 +84,22 @@ RUN apk add --no-cache curl openssl libc6-compat
 # Garantir mesma versão do npm no runtime
 RUN npm i -g npm@11.6.2
 
-# Copia apenas manifests necessários (cache melhor)
+# Copia apenas arquivos necessários p/ metadata + lock
 COPY package.json package-lock.json* ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
-# Instala deps de produção dos WORKSPACES (cria links em node_modules)
-# Usamos `npm install` para evitar EUNSUPPORTEDPROTOCOL com workspace:* em locks antigos/mistos
-RUN npm install --omit=dev --ignore-scripts --workspaces --no-audit --no-fund
+# 👉 Copia node_modules pronto (resolvido com workspaces) do builder
+COPY --from=builder /app/node_modules ./node_modules
+
+# 👉 Pruna para produção (remove devDeps) respeitando workspaces
+RUN npm prune --omit=dev --workspaces --no-audit --no-fund
 
 # Copia artefatos buildados
 COPY --from=builder /app/apps/api/dist apps/api/dist
 COPY --from=builder /app/packages/shared/dist packages/shared/dist
 
-# (Opcional) Copiar schema do Prisma se a API ler em runtime
+# (Opcional) Copiar schema do Prisma se a API ler em runtime (e.g. validações)
 COPY apps/api/prisma apps/api/prisma
 
 # Porta usada em produção
