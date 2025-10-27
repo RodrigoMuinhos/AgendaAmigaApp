@@ -20,7 +20,7 @@ RUN apk add --no-cache \
     libc6-compat
 
 # Alinha npm com o packageManager da raiz (suporte a "workspace:*")
-RUN npm i -g npm@11.0.0
+RUN npm i -g npm@11.6.2
 
 ################################
 # Camada de dependências (NPM) #
@@ -103,7 +103,7 @@ ENV NODE_ENV=production \
 RUN apk add --no-cache curl openssl libc6-compat
 
 # Esta imagem é diferente do stage base, então garantimos npm 11 aqui também
-RUN npm i -g npm@11.0.0
+RUN npm i -g npm@11.6.2
 
 # Copia apenas manifests necessários (cache melhor)
 # Lockfile opcional (package-lock.json*)
@@ -112,11 +112,8 @@ COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
 # ⚠️ Instala deps de produção dos WORKSPACES (cria links em node_modules)
-RUN if [ -f package-lock.json ]; then \
-      npm ci --omit=dev --ignore-scripts --workspaces ; \
-    else \
-      npm install --omit=dev --ignore-scripts --workspaces ; \
-    fi
+# Usamos `npm install` (não `ci`) pois lida melhor com `workspace:*` em locks antigos/mistos.
+RUN npm install --omit=dev --ignore-scripts --workspaces --no-audit --no-fund
 
 # Copia artefatos buildados
 COPY --from=builder /app/apps/api/dist apps/api/dist
