@@ -25,6 +25,8 @@ type FormCriancaProps = {
   submitLabel?: string;
   onDelete?: () => void;
   deleteLabel?: string;
+  status?: 'idle' | 'success' | 'error';
+  statusMessage?: string;
 };
 
 const telefoneRegex =
@@ -227,6 +229,8 @@ export function FormCrianca({
   submitLabel,
   onDelete,
   deleteLabel,
+  status = 'idle',
+  statusMessage,
 }: FormCriancaProps) {
   const {
     register,
@@ -686,7 +690,7 @@ export function FormCrianca({
         )}
       </section>
 
-      <footer className="form-actions">
+      <footer className="form-actions flex flex-wrap items-center gap-3">
         {onDelete ? (
           <Button
             type="button"
@@ -698,12 +702,26 @@ export function FormCrianca({
             {deleteLabel ?? 'Excluir dados'}
           </Button>
         ) : null}
-        <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
-          Cancelar
-        </Button>
-        <Button type="submit" isLoading={isSubmitting}>
-          {submitLabel ?? 'Salvar crianca'}
-        </Button>
+        {statusMessage ? (
+          <span
+            className={`flex items-center gap-1 text-sm font-semibold ${
+              status === 'success' ? 'text-emerald-600' : 'text-[rgb(var(--color-danger))]'
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            <span aria-hidden>{status === 'success' ? '[ok]' : '[erro]'}</span>
+            {statusMessage}
+          </span>
+        ) : null}
+        <div className="ml-auto flex items-center gap-2">
+          <Button type="button" variant="ghost" onClick={onCancel} disabled={isSubmitting}>
+            Cancelar
+          </Button>
+          <Button type="submit" isLoading={isSubmitting}>
+            {submitLabel ?? 'Salvar crianca'}
+          </Button>
+        </div>
       </footer>
     </form>
   );

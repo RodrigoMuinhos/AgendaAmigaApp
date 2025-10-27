@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { EmptyState } from '../../../components/ui/EmptyState';
@@ -10,14 +11,18 @@ import type { CriancaCreateInput } from '../types';
 export function EditarCriancaPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const navigateTimeout = useRef<number | undefined>(undefined);
   const [notFound, setNotFound] = useState(false);
 
-  const { crianca, atualizar, buscarPorId, remover, carregando } = useCriancasStore((state) => ({
+  const { crianca, atualizar, buscarPorId, remover, carregando, erro, limparErro } = useCriancasStore((state) => ({
     crianca: id ? state.criancas.find((item) => item.id === id) : undefined,
     atualizar: state.atualizar,
     buscarPorId: state.buscarPorId,
     remover: state.remover,
     carregando: state.carregando,
+    erro: state.erro,
+    limparErro: state.limparErro,
   }));
 
   useEffect(() => {
@@ -74,11 +79,57 @@ export function EditarCriancaPage() {
     );
   }
 
-  const handleSubmit = async (dados: CriancaCreateInput) => {
-    const atualizada = await atualizar(id, dados);
-    if (atualizada) {
-      navigate(`/criancas/${id}`);
+  const atualizarCrianca = useMutation({
+    mutationFn: async (dados: CriancaCreateInput) => {
+      if (!id) throw new Error('Identificador da crianca nao encontrado.');
+      limparErro();
+      const atualizada = await atualizar(id, dados);
+      if (!atualizada) {
+        throw new Error('Nao foi possivel salvar as alteracoes.');
+      }
+      return atualizada;
+    },
+    onSuccess: (atualizada) => {
+      if (!id) return;
+      queryClient.invalidateQueries({ queryKey: ['criancas'] }).catch(() => undefined);
+      navigateTimeout.current = window.setTimeout(() => {
+        navigate(`/criancas/${atualizada.id}`);
+      }, 400);
+    },
+  });
+
+  useEffect(
+    () => () => {
+      if (navigateTimeout.current) {
+        window.clearTimeout(navigateTimeout.current);
+      }
+    },
+    [],
+  );
+
+  const status = useMemo<'idle' | 'success' | 'error'>(() => {
+    if (atualizarCrianca.isError) return 'error';
+    if (atualizarCrianca.isSuccess) return 'success';
+    return 'idle';
+  }, [atualizarCrianca.isError, atualizarCrianca.isSuccess]);
+
+  const statusMessage = useMemo(() => {
+    if (status === 'success') {
+      return 'Alteracoes salvas com sucesso';
     }
+    if (status === 'error') {
+      const message =
+        erro ||
+        (atualizarCrianca.error instanceof Error
+          ? atualizarCrianca.error.message
+          : 'Nao foi possivel salvar as alteracoes.');
+      return message;
+    }
+    return undefined;
+  }, [atualizarCrianca.error, erro, status]);
+
+  const handleSubmit = async (dados: CriancaCreateInput) => {
+    await atualizarCrianca.mutateAsync(dados);
   };
 
   const handleDelete = async () => {
@@ -118,10 +169,12 @@ export function EditarCriancaPage() {
           defaultValues={crianca}
           onSubmit={handleSubmit}
           onCancel={() => navigate(`/criancas/${id}`)}
-          isSubmitting={carregando}
+          isSubmitting={atualizarCrianca.isPending || carregando}
           submitLabel="Salvar alteracoes"
           onDelete={handleDelete}
           deleteLabel="Excluir dados"
+          status={status}
+          statusMessage={statusMessage}
         />
       </Card>
     </div>
