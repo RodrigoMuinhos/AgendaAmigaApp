@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { useEasyMode } from '../../core/hooks/useEasyMode';
 import { fetchAlerts } from '../../core/api/resources';
+import { asArray, safeFilter } from '../../core/utils/arrays';
 import type { Alert } from '../../core/types/api';
 
 export function AlertsPage() {
@@ -19,9 +20,10 @@ export function AlertsPage() {
 
   const [dismissed, setDismissed] = useState<Record<string, Alert['status']>>({});
 
-  const alerts = (data ?? []).filter((alert) => dismissed[alert.id] !== 'done');
+  const alertsData = asArray<Alert>(data);
+  const alerts = safeFilter<Alert>(alertsData, (alert) => dismissed[alert.id] !== 'done');
   const pendingCount = alerts.length;
-  const totalCount = data?.length ?? 0;
+  const totalCount = alertsData.length;
 
   const handleDone = (id: string) => {
     setDismissed((prev) => ({ ...prev, [id]: 'done' }));

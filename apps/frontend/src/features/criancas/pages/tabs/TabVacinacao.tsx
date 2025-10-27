@@ -4,6 +4,7 @@ import { Button } from '../../../../components/ui/button';
 import { EmptyState } from '../../../../components/ui/EmptyState';
 import { useOutletContext } from 'react-router-dom';
 import { useCriancasStore } from '../../store';
+import { asArray } from '../../../../core/utils/arrays';
 import { vacinasCatalogo } from '../../vacinas.catalogo';
 import { calcularResumoVacinacao } from '../../selectors';
 import { ResumoCobertura } from '../../components/Vacinacao/ResumoCobertura';
@@ -32,7 +33,7 @@ export function TabVacinacao() {
 
   const { historico, addVacina, listarPendencias, proximasDoses, getCaderneta, crianca } = useCriancasStore(
     (state) => ({
-      historico: state.cadernetas[criancaId]?.vacinacao.historico ?? [],
+      historico: asArray(state.cadernetas[criancaId]?.vacinacao.historico),
       addVacina: state.addVacina,
       listarPendencias: state.listarPendencias,
       proximasDoses: state.proximasDoses,

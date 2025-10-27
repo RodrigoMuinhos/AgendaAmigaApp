@@ -3,6 +3,7 @@ import { Edit, Ruler, Scale } from 'lucide-react';
 import { useOutletContext } from 'react-router-dom';
 import { Button } from '../../../../components/ui/button';
 import { EmptyState } from '../../../../components/ui/EmptyState';
+import { asArray } from '../../../../core/utils/arrays';
 import { useCriancasStore } from '../../store';
 import { ResumoCrescimento } from '../../components/Crescimento/ResumoCrescimento';
 import { TabelaCrescimento } from '../../components/Crescimento/TabelaCrescimento';
@@ -32,7 +33,7 @@ export function TabCrescimento() {
     getCaderneta,
     crianca,
   } = useCriancasStore((state) => ({
-    registros: state.cadernetas[criancaId]?.crescimento?.registros ?? [],
+    registros: asArray(state.cadernetas[criancaId]?.crescimento?.registros),
     addCrescimento: state.addCrescimento,
     editarCrescimento: state.editarCrescimento,
     listarMedidasCrescimento: state.listarMedidasCrescimento,

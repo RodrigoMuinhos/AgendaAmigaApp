@@ -11,7 +11,8 @@ import { Modal } from '../../../components/ui/Modal';
 import { Select } from '../../../components/ui/select';
 import { Textarea } from '../../../components/ui/textarea';
 import { createAttendance, fetchFamilies } from '../../../core/api/resources';
-import type { AttendanceInput, AttendanceType } from '../../../core/types/api';
+import { asArray } from '../../../core/utils/arrays';
+import type { AttendanceInput, AttendanceType, Family } from '../../../core/types/api';
 
 const attendanceStatuses = ['AGENDADO', 'REALIZADO', 'FALTOU', 'CANCELADO'] as const;
 const typeLabels = {
@@ -65,16 +66,17 @@ export function QuickAttendanceModal({ open, onClose, type, onCreated }: QuickAt
     staleTime: 5 * 60 * 1000,
   });
 
+  const families = asArray<Family>(familiesQuery.data);
+
   const patients = useMemo(() => {
-    if (!familiesQuery.data) return [];
-    return familiesQuery.data.flatMap((family) =>
-      family.members.map((member) => ({
+    return families.flatMap((family) =>
+      asArray(family.members).map((member) => ({
         id: member.id,
         name: member.name,
         family: family.name,
       })),
     );
-  }, [familiesQuery.data]);
+  }, [families]);
 
   const form = useForm<QuickAttendanceValues>({
     resolver: zodResolver(quickAttendanceSchema),

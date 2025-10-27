@@ -5,6 +5,7 @@ import { DoseForm } from './DoseForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { useEasyMode } from '../../core/hooks/useEasyMode';
 import { fetchTreatments } from '../../core/api/resources';
+import { asArray } from '../../core/utils/arrays';
 import type { Treatment } from '../../core/types/api';
 
 export function TreatmentListPage() {
@@ -17,7 +18,7 @@ export function TreatmentListPage() {
     queryFn: fetchTreatments,
   });
 
-  const treatments = data ?? [];
+  const treatments = asArray<Treatment>(data);
 
   const handleCreated = () => {
     queryClient.invalidateQueries({ queryKey: ['treatments'] }).catch(() => undefined);

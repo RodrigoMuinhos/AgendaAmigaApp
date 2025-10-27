@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import { fetchFamilies, fetchTodayRoutine, fetchTreatments } from '../../core/api/resources';
+import { asArray, safeFilter } from '../../core/utils/arrays';
 import type { Family, RoutineItem, Treatment } from '../../core/types/api';
 
 export function QuickStats() {
@@ -27,8 +28,8 @@ export function QuickStats() {
   const isLoading = familiesQuery.isLoading || treatmentsQuery.isLoading || routineQuery.isLoading;
   const hasError = familiesQuery.isError || treatmentsQuery.isError || routineQuery.isError;
 
-  const families = familiesQuery.data ?? [];
-  const routine = routineQuery.data ?? [];
+  const families = asArray<Family>(familiesQuery.data);
+  const routine = asArray<RoutineItem>(routineQuery.data);
 
   const doseCount = countDoses(routine);
   const shareCount = countShares(families);
@@ -105,5 +106,6 @@ function countShares(families: Family[]) {
 }
 
 function countDoses(routine: RoutineItem[]) {
-  return routine.filter((task) => task.category === 'dose').length || routine.length;
+  const doses = safeFilter<RoutineItem>(routine, (task) => task.category === 'dose');
+  return doses.length || routine.length;
 }

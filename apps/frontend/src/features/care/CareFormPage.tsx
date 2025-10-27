@@ -17,7 +17,14 @@ import {
   fetchProfessionals,
   updateAttendance,
 } from '../../core/api/resources';
-import type { AttendanceInput, AttendanceStatus, AttendanceType } from '../../core/types/api';
+import { asArray, safeFilter } from '../../core/utils/arrays';
+import type {
+  AttendanceInput,
+  AttendanceStatus,
+  AttendanceType,
+  Family,
+  Professional,
+} from '../../core/types/api';
 import { attendanceFormSchema, type AttendanceFormValues } from './schemas';
 
 type CareFormPageProps = {
@@ -63,9 +70,17 @@ export function CareFormPage({ defaultType }: CareFormPageProps) {
     enabled: isEditing,
   });
 
+  const familiesData = asArray<Family>(familiesQuery.data);
+  const professionals = asArray<Professional>(professionalsQuery.data);
+
   useEffect(() => {
     if (attendanceQuery.data) {
       const attendance = attendanceQuery.data;
+      const attachments = asArray<string>(attendance.attachments);
+      const reminders = asArray(attendance.reminders).map((reminder) => ({
+        minutesBefore: reminder.minutesBefore,
+        channel: reminder.channel,
+      }));
       form.reset({
         patientId: attendance.patientId,
         type: attendance.type,
@@ -75,25 +90,21 @@ export function CareFormPage({ defaultType }: CareFormPageProps) {
         datetime: dayjs(attendance.datetime).toDate(),
         status: attendance.status,
         notes: attendance.notes ?? '',
-        attachments: attendance.attachments ?? [],
-        reminders: attendance.reminders?.map((reminder) => ({
-          minutesBefore: reminder.minutesBefore,
-          channel: reminder.channel,
-        })) ?? [],
+        attachments,
+        reminders,
       });
     }
   }, [attendanceQuery.data, form]);
 
   const patients = useMemo(() => {
-    if (!familiesQuery.data) return [];
-    return familiesQuery.data.flatMap((family) =>
-      family.members.map((member) => ({
+    return familiesData.flatMap((family) =>
+      asArray(family.members).map((member) => ({
         id: member.id,
         name: member.name,
         family: family.name,
       })),
     );
-  }, [familiesQuery.data]);
+  }, [familiesData]);
 
   const reminderArray = useFieldArray<AttendanceFormValues, 'reminders'>({
     control: form.control,
@@ -120,26 +131,28 @@ export function CareFormPage({ defaultType }: CareFormPageProps) {
 
   const onSubmit = (values: AttendanceFormValues) => {
     const patientOption = patients.find((patient) => patient.id === values.patientId);
+    const professionalOption = professionals.find((prof) => prof.id === values.professionalId);
+    const attachments = safeFilter<string>(values.attachments, (url) => Boolean(url?.length));
+    const remindersPayload = safeFilter(
+      values.reminders,
+      (reminder) => Boolean(reminder.minutesBefore && reminder.channel),
+    ).map((reminder) => ({
+      minutesBefore: Number(reminder.minutesBefore),
+      channel: reminder.channel,
+    }));
     const payload: AttendanceInput = {
       patientId: values.patientId,
       patientName: patientOption?.name ?? '',
       type: values.type,
       area: values.area?.trim() || undefined,
       professionalId: values.professionalId || undefined,
-      professionalName:
-        professionalsQuery.data?.find((prof) => prof.id === values.professionalId)?.name ?? undefined,
+      professionalName: professionalOption?.name ?? undefined,
       location: values.location?.trim() || undefined,
       datetime: values.datetime.toISOString(),
       status: values.status,
       notes: values.notes?.trim() || undefined,
-      attachments: values.attachments?.filter((url) => url?.length) ?? [],
-      reminders:
-        values.reminders
-          ?.filter((reminder) => reminder.minutesBefore && reminder.channel)
-          .map((reminder) => ({
-            minutesBefore: Number(reminder.minutesBefore),
-            channel: reminder.channel,
-          })) ?? [],
+      attachments,
+      reminders: remindersPayload,
     };
 
     if (isEditing && id) {
@@ -214,7 +227,7 @@ export function CareFormPage({ defaultType }: CareFormPageProps) {
                 <span className="font-semibold leading-tight">{t('care.form.professional')}</span>
                 <Select {...form.register('professionalId')}>
                   <option value="">{t('care.form.professionalPlaceholder')}</option>
-                  {professionalsQuery.data?.map((professional) => (
+                  {professionals.map((professional) => (
                     <option key={professional.id} value={professional.id}>
                       {professional.name}
                       {professional.specialty ? ` • ${professional.specialty}` : ''}
@@ -285,7 +298,7 @@ export function CareFormPage({ defaultType }: CareFormPageProps) {
               render={({ field }) => (
                 <Textarea
                   rows={3}
-                  value={(field.value ?? []).join('\n')}
+                  value={asArray<string>(field.value).join('\n')}
                   onChange={(event) => {
                     const lines = event.target.value
                       .split('\n')

@@ -2,6 +2,7 @@ import axios from 'axios';
 
 import { endpoints } from '../../core/api/endpoints';
 import { api } from '../../services/api';
+import { asArray } from '../../core/utils/arrays';
 import type { Crianca, CriancaCreateInput } from './types';
 
 const DEFAULT_TUTOR_ID = 'demo-tutor';
@@ -14,7 +15,7 @@ export async function listarCriancas(): Promise<Crianca[]> {
   const response = await api.get<Crianca[]>(endpoints.children, {
     params: tutorParams(),
   });
-  return response.data;
+  return asArray<Crianca>(response.data);
 }
 
 export async function buscarCriancaPorId(id: string): Promise<Crianca | undefined> {

@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '../../components/ui/dialog';
 import { fetchAttendances } from '../../core/api/resources';
+import { asArray, safeFilter } from '../../core/utils/arrays';
 import type { Attendance, AttendanceStatus, AttendanceType } from '../../core/types/api';
 
 type CareSection = 'agenda' | 'nutricao' | 'medicamentos';
@@ -63,16 +64,18 @@ export function CareOverviewPage() {
   const [showNutritionDiary, setShowNutritionDiary] = useState(false);
   const nutritionDiaryRef = useRef<HTMLDivElement | null>(null);
 
-  const { data = [], isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['attendances'],
     queryFn: () => fetchAttendances(),
   });
   const [openCreate, setOpenCreate] = useState(false);
   const [createType, setCreateType] = useState<AttendanceType>('CONSULTA');
 
+  const attendancesData = asArray<Attendance>(data);
+
   const attendances = useMemo(() => {
-    const sorted = [...data].sort((a, b) => a.datetime.localeCompare(b.datetime));
-    return sorted.filter((attendance) => {
+    const sorted = [...attendancesData].sort((a, b) => a.datetime.localeCompare(b.datetime));
+    return safeFilter<Attendance>(sorted, (attendance) => {
       if (typeFilter && attendance.type !== typeFilter) {
         return false;
       }
@@ -81,7 +84,7 @@ export function CareOverviewPage() {
       }
       return true;
     });
-  }, [data, statusFilter, typeFilter]);
+  }, [attendancesData, statusFilter, typeFilter]);
 
   const createDialogTitle = `Novo atendimento (${quickTypeLabels[createType]})`;
 

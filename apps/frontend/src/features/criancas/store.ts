@@ -15,6 +15,7 @@ import type {
   VacinaDose,
   VacinaRegistro,
 } from './types';
+import { asArray } from '../../core/utils/arrays';
 
 const CADERNETA_STORAGE_KEY = 'agenda-amiga:cadernetas';
 const SELECIONADA_STORAGE_KEY = 'agenda-amiga:crianca-selecionada';
@@ -37,10 +38,10 @@ function hidratarCadernetas(): Record<string, Caderneta> {
         {
           criancaId: value?.criancaId ?? key,
           vacinacao: {
-            historico: value?.vacinacao?.historico ?? [],
+            historico: asArray(value?.vacinacao?.historico),
           },
           crescimento: {
-            registros: value?.crescimento?.registros ?? [],
+            registros: asArray(value?.crescimento?.registros),
           },
         },
       ]),
@@ -392,8 +393,8 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
       );
       const pendencias: Pendencia[] = [];
 
-      catalogo.forEach((vacina) => {
-        const dosesPendentes = agruparPorVacina(vacina.doses, (dose) => {
+      asArray(catalogo).forEach((vacina) => {
+        const dosesPendentes = agruparPorVacina(asArray(vacina.doses), (dose) => {
           if (aplicadas.has(`${vacina.id}:${dose.codigo}`)) return false;
           if (dose.idadeAlvoMeses === undefined) {
             return false;
@@ -419,8 +420,8 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
       );
 
       const proximas: ProximaDose[] = [];
-      catalogo.forEach((vacina) => {
-        vacina.doses.forEach((dose) => {
+      asArray(catalogo).forEach((vacina) => {
+        asArray(vacina.doses).forEach((dose) => {
           if (aplicadas.has(`${vacina.id}:${dose.codigo}`)) {
             return;
           }

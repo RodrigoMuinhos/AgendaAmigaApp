@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { useEasyMode } from '../../core/hooks/useEasyMode';
 import type { Family } from '../../core/types/api';
 import { fetchFamilies } from '../../core/api/resources';
+import { asArray } from '../../core/utils/arrays';
 
 export function FamilyListPage() {
   const { t } = useTranslation();
@@ -17,7 +18,7 @@ export function FamilyListPage() {
     queryFn: fetchFamilies,
   });
 
-  const families = data ?? [];
+  const families = asArray<Family>(data);
 
   return (
     <section className="space-y-8">
@@ -69,6 +70,8 @@ type FamilyCardProps = {
 
 function FamilyCard({ family }: FamilyCardProps) {
   const { t } = useTranslation();
+  const members = asArray(family.members);
+  const caregivers = asArray(family.caregivers);
 
   return (
     <Card className="h-full">
@@ -83,10 +86,10 @@ function FamilyCard({ family }: FamilyCardProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-base">
-          <strong>{t('family.members', { count: family.members.length })}</strong>
+          <strong>{t('family.members', { count: members.length })}</strong>
         </p>
         <p className="text-base">
-          <strong>{t('family.caregivers', { count: family.caregivers.length })}</strong>
+          <strong>{t('family.caregivers', { count: caregivers.length })}</strong>
         </p>
         {family.primaryCaregiver ? (
           <p className="text-base text-muted">

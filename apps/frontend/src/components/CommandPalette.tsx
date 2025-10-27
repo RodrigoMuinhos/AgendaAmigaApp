@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { cn } from "../utils/cn";
+import { asArray, safeFilter } from "../core/utils/arrays";
 
 export type CommandPaletteItem = {
   id: string;
@@ -41,6 +42,8 @@ export const CommandPalette = forwardRef<CommandPaletteHandle, CommandPalettePro
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+
+  const safeItems = useMemo(() => asArray<CommandPaletteItem>(items), [items]);
   
   useImperativeHandle(ref, () => ({
     open: () => {
@@ -55,10 +58,10 @@ export const CommandPalette = forwardRef<CommandPaletteHandle, CommandPalettePro
   }));
 
   const filteredItems = useMemo(() => {
-    if (!query) return items;
+    if (!query) return safeItems;
 
     const searchTerms = query.toLowerCase().split(" ");
-    return items.filter((item) => {
+    return safeFilter<CommandPaletteItem>(safeItems, (item) => {
       const searchableText = [
         item.label,
         item.description,
@@ -67,7 +70,7 @@ export const CommandPalette = forwardRef<CommandPaletteHandle, CommandPalettePro
 
       return searchTerms.every((term) => searchableText.includes(term));
     });
-  }, [items, query]);
+  }, [safeItems, query]);
 
   const groupedItems = useMemo(() => {
     const groups = new Map<string, CommandPaletteItem[]>();

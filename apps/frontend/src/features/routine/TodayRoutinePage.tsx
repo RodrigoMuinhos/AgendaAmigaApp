@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { useEasyMode } from '../../core/hooks/useEasyMode';
 import { fetchTodayRoutine } from '../../core/api/resources';
+import { asArray, safeFilter } from '../../core/utils/arrays';
 import type { RoutineItem } from '../../core/types/api';
 
 export function TodayRoutinePage() {
@@ -20,14 +21,11 @@ export function TodayRoutinePage() {
     queryFn: () => fetchTodayRoutine(date),
   });
 
-  const routine = data ?? [];
+  const routine = asArray<RoutineItem>(data);
   const [completed, setCompleted] = useState<string[]>([]);
 
   const defaults = useMemo(
-    () =>
-      routine
-        .filter((item) => item.done)
-        .map((item) => item.id),
+    () => safeFilter<RoutineItem>(routine, (item) => item.done).map((item) => item.id),
     [routine],
   );
 

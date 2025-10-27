@@ -9,6 +9,7 @@ import { Input } from '../../components/ui/input';
 import { Select } from '../../components/ui/select';
 import { Textarea } from '../../components/ui/textarea';
 import { fetchFamilies, createTreatment } from '../../core/api/resources';
+import { asArray } from '../../core/utils/arrays';
 import { useEasyMode } from '../../core/hooks/useEasyMode';
 import type { Treatment } from '../../core/types/api';
 
@@ -65,6 +66,8 @@ export function DoseForm({ onCreated }: DoseFormProps) {
     mutation.mutate(values);
   };
 
+  const families = asArray(familiesQuery.data);
+
   return (
     <form
       onSubmit={form.handleSubmit(onSubmit)}
@@ -82,7 +85,7 @@ export function DoseForm({ onCreated }: DoseFormProps) {
           disabled={familiesQuery.isLoading}
         >
           <option value="">{t('common.select')}</option>
-          {familiesQuery.data?.map((family) => (
+          {families.map((family) => (
             <option key={family.id} value={family.id}>
               {family.name}
             </option>

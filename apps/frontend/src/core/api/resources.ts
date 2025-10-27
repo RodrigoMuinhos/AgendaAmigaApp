@@ -1,4 +1,5 @@
 import { api } from '../../services/api';
+import { asArray } from '../utils/arrays';
 import { endpoints } from './endpoints';
 import type {
   Alert,
@@ -26,7 +27,7 @@ async function safeRequest<T>(request: () => Promise<T>, fallback: T): Promise<T
 export async function fetchFamilies() {
   return safeRequest(async () => {
     const response = await api.get<Family[]>(endpoints.families);
-    return response.data;
+    return asArray<Family>(response.data);
   }, []);
 }
 
@@ -38,7 +39,7 @@ export async function createFamily(payload: Omit<Family, 'id'>) {
 export async function fetchTreatments() {
   return safeRequest(async () => {
     const response = await api.get<Treatment[]>(endpoints.treatments);
-    return response.data;
+    return asArray<Treatment>(response.data);
   }, []);
 }
 
@@ -50,13 +51,13 @@ export async function createTreatment(payload: Omit<Treatment, 'id' | 'nextDose'
 export async function fetchTodayRoutine(date: string) {
   return safeRequest(async () => {
     const response = await api.get<RoutineItem[]>(endpoints.dosesByDate(date));
-    return response.data;
+    return asArray<RoutineItem>(response.data);
   }, []);
 }
 
 export async function fetchAlerts() {
   const response = await api.get<Alert[]>(endpoints.alerts);
-  return response.data;
+  return asArray<Alert>(response.data);
 }
 
 type AttendancesQuery = {
@@ -78,7 +79,7 @@ export async function fetchAttendances(params: AttendancesQuery = {}) {
   const response = await api.get<Attendance[]>(
     query ? `${endpoints.attendances}?${query}` : endpoints.attendances,
   );
-  return response.data;
+  return asArray<Attendance>(response.data);
 }
 
 export async function fetchAttendanceById(id: string) {

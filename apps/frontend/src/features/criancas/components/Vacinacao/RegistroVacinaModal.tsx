@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { Modal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/button';
 import { Campo } from '../Campo';
+import { asArray } from '../../../../core/utils/arrays';
 import type { VacinaCatalogoItem, VacinaDose, VacinaRegistro } from '../../types';
 
 type FormValues = {
@@ -56,8 +57,10 @@ export function RegistroVacinaModal({
     }
   }, [open, reset]);
 
-  const vacinaSelecionada = catalogo.find((item) => item.id === watch('vacinaId'));
-  const dosesDisponiveis: VacinaDose[] = vacinaSelecionada?.doses ?? [];
+  const catalogoItems = asArray<VacinaCatalogoItem>(catalogo);
+
+  const vacinaSelecionada = catalogoItems.find((item) => item.id === watch('vacinaId'));
+  const dosesDisponiveis: VacinaDose[] = asArray<VacinaDose>(vacinaSelecionada?.doses);
 
   useEffect(() => {
     if (!vacinaSelecionada) {
@@ -118,7 +121,7 @@ export function RegistroVacinaModal({
               className="w-full rounded-2xl border border-[rgba(var(--color-border),0.4)] bg-transparent px-4 py-3 text-sm shadow-inner focus:border-[rgb(var(--color-primary))] focus:outline-none focus:ring-2 focus:ring-[rgba(30,136,229,0.25)]"
             >
               <option value="">Selecione</option>
-              {catalogo.map((item) => (
+              {catalogoItems.map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.nome}
                 </option>
