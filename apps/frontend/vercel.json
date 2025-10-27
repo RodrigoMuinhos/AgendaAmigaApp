@@ -1,10 +1,6 @@
 {
   "headers": [
     { "source": "/", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
-    { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
-    { "source": "/inicio", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
-    { "source": "/criancas", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
-    { "source": "/care", "headers": [{ "key": "Cache-Control", "value": "no-store" }] },
-    { "source": "/tratamentos", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
+    { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
   ]
 }
