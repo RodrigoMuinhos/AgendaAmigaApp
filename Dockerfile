@@ -92,42 +92,41 @@ RUN if [ -d "apps/api/dist/apps/api/src" ]; then \
 FROM node:20-alpine AS production
 WORKDIR /app
 
-# Ambiente de produção + segurança contra scripts
+# Ambiente de produção + segurança
 ENV NODE_ENV=production \
     HUSKY=0 \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false \
     npm_config_ignore_scripts=true
 
-# Dependências mínimas para runtime (curl pro healthcheck, openssl p/ drivers)
+# Dependências mínimas para runtime
 RUN apk add --no-cache curl openssl libc6-compat
 
-# Esta imagem é diferente do stage base, então garantimos npm 11 aqui também
+# Garantir mesma versão do npm no runtime
 RUN npm i -g npm@11.6.2
 
 # Copia apenas manifests necessários (cache melhor)
-# Lockfile opcional (package-lock.json*)
 COPY package.json package-lock.json* ./
 COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
-# ⚠️ Instala deps de produção dos WORKSPACES (cria links em node_modules)
-# Usamos `npm install` (não `ci`) pois lida melhor com `workspace:*` em locks antigos/mistos.
+# Instala deps de produção dos WORKSPACES (cria links em node_modules)
+# Usamos `npm install` para evitar EUNSUPPORTEDPROTOCOL com workspace:* em locks antigos/mistos
 RUN npm install --omit=dev --ignore-scripts --workspaces --no-audit --no-fund
 
 # Copia artefatos buildados
 COPY --from=builder /app/apps/api/dist apps/api/dist
 COPY --from=builder /app/packages/shared/dist packages/shared/dist
 
-# (Opcional) Copiar schema do Prisma se sua API ler em runtime (e.g. validações)
+# (Opcional) Copiar schema do Prisma se a API ler em runtime
 COPY apps/api/prisma apps/api/prisma
 
-# Porta usada em produção (Render/containers)
+# Porta usada em produção
 EXPOSE 3000
 
-# Healthcheck simples (garanta que /health exista na API)
+# Healthcheck simples
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD curl -fsS http://localhost:3000/health || exit 1
 
-# Start da API (ajuste se seu entrypoint final for outro arquivo)
+# Start da API
 CMD ["node", "apps/api/dist/index.js"]
