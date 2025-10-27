@@ -1,33 +1,72 @@
-export const SHARED_READY = true;
+// AUTO-GENERATED BARREL - do not edit by hand
+// Run: node packages/shared/scripts/gen-barrel.mjs
 
-export type Id = string;
+export * from './application/doses/ConfirmarTomadaDose';
 
-export function assert(condition: unknown, message = "Assertion failed"): asserts condition {
-  if (!condition) {
-    throw new Error(message);
-  }
-}
+export * from './application/medicamentos/AlterarEsquemaDose';
 
-export { ListarPacientesPorTutor } from "./usecases/pacientes/ListarPacientesPorTutor";
-export { ConfirmarTomadaDose } from "./application/doses/ConfirmarTomadaDose";
-export { AlterarEsquemaDose } from "./application/medicamentos/AlterarEsquemaDose";
-export { GerarShareLink } from "./application/share-links/GerarShareLink";
+export * from './application/pacientes/ListarPacientes';
 
-export type { Clock } from "./domain/gateways/Clock";
-export type { PacienteRepository } from "./domain/repositories/PacienteRepository";
-export type { MedicamentoRepository } from "./domain/repositories/MedicamentoRepository";
-export type { DoseLogRepository } from "./domain/repositories/DoseLogRepository";
-export type { ShareLinkRepository } from "./domain/repositories/ShareLinkRepository";
+export * from './application/share-links/GerarShareLink';
 
-export * from "./domain/aggregates/Paciente";
-export * from "./domain/aggregates/ShareLink";
-export * from "./domain/entities/DoseLog";
-export * from "./domain/entities/Medicamento";
-export * from "./domain/entities/PlanoSaude";
-export * from "./domain/entities/EsquemaDose";
-export * from "./domain/value-objects/DoseHorario";
-export * from "./domain/value-objects/NumeroCarteirinha";
-export * from "./domain/value-objects/Periodo";
-export * from "./domain/value-objects/TokenShare";
-export * from "./domain/value-objects/UnidadeDosagem";
-export * from "./domain/specifications/EscopoCompartilhamento";
+export * from './domain/aggregates/Paciente';
+
+export * from './domain/aggregates/ShareLink';
+
+export * from './domain/entities/Consulta';
+
+export * from './domain/entities/Documento';
+
+export * from './domain/entities/DoseLog';
+
+export * from './domain/entities/EsquemaDose';
+
+export * from './domain/entities/Medicamento';
+
+export * from './domain/entities/PlanoSaude';
+
+export * from './domain/events/DomainEvent';
+
+export * from './domain/events/DoseConfirmada';
+
+export * from './domain/events/EsquemaDeDoseAlterado';
+
+export * from './domain/events/ShareLinkAcessado';
+
+export * from './domain/events/ShareLinkGerado';
+
+export * from './domain/gateways/Clock';
+
+export * from './domain/repositories/ConsultaRepository';
+
+export * from './domain/repositories/DocumentoRepository';
+
+export * from './domain/repositories/DoseLogRepository';
+
+export * from './domain/repositories/MedicamentoRepository';
+
+export * from './domain/repositories/PacienteRepository';
+
+export * from './domain/repositories/ShareLinkRepository';
+
+export * from './domain/specifications/EscopoCompartilhamento';
+
+export * from './domain/value-objects/Adesao';
+
+export * from './domain/value-objects/DoseHorario';
+
+export * from './domain/value-objects/Email';
+
+export * from './domain/value-objects/NumeroCarteirinha';
+
+export * from './domain/value-objects/Periodo';
+
+export * from './domain/value-objects/SenhaHash';
+
+export * from './domain/value-objects/TokenShare';
+
+export * from './domain/value-objects/UnidadeDosagem';
+
+export * from './shared-ready';
+
+export * from './usecases/pacientes/ListarPacientesPorTutor';

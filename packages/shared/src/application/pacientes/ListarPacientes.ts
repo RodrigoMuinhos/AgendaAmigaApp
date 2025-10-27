@@ -1,18 +1,18 @@
 ﻿import { PacienteSnapshot } from "../../domain/aggregates/Paciente";
 import { PacienteRepository } from "../../domain/repositories/PacienteRepository";
 
-export interface ListarPacientesPorTutorInput {
+export interface ListarPacientesInput {
   tutorId: string;
 }
 
-export interface ListarPacientesPorTutorOutput {
+export interface ListarPacientesOutput {
   pacientes: PacienteSnapshot[];
 }
 
-export class ListarPacientesPorTutor {
+export class ListarPacientes {
   constructor(private readonly pacienteRepository: PacienteRepository) {}
 
-  async execute({ tutorId }: ListarPacientesPorTutorInput): Promise<ListarPacientesPorTutorOutput> {
+  async execute({ tutorId }: ListarPacientesInput): Promise<ListarPacientesOutput> {
     if (!tutorId.trim()) {
       throw new Error("TutorId obrigatorio");
     }
