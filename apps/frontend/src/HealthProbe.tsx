@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGet } from './lib/api';
+import { apiGet, API_BASE } from './lib/api';
 
 type ProbeStatus = 'ok' | 'erro' | 'carregando';
 
@@ -30,9 +30,45 @@ export function HealthProbe({ size = 20 }: HealthProbeProps) {
   const [status, setStatus] = useState<ProbeStatus>('carregando');
 
   useEffect(() => {
+    let active = true;
+
+    const handleSuccess = (isOk: boolean) => {
+      if (!active) return;
+      setStatus(isOk ? 'ok' : 'erro');
+    };
+
+    const fallbackCheck = async () => {
+      try {
+        const url = API_BASE ? `${API_BASE}/health` : '/health';
+        const response = await fetch(url, { credentials: 'include' });
+        if (!response.ok) {
+          handleSuccess(false);
+          return;
+        }
+
+        const contentType = response.headers.get('content-type') ?? '';
+        if (contentType.includes('application/json')) {
+          const data = await response.json().catch(() => undefined);
+          handleSuccess(Boolean(data) && data.status === 'ok');
+          return;
+        }
+
+        const text = await response.text().catch(() => '');
+        handleSuccess(text.trim().toLowerCase() === 'ok');
+      } catch {
+        handleSuccess(false);
+      }
+    };
+
     apiGet<{ status?: string }>('/health')
-      .then((response) => setStatus(response.status === 'ok' ? 'ok' : 'erro'))
-      .catch(() => setStatus('erro'));
+      .then((response) => handleSuccess(response.status === 'ok'))
+      .catch(() => {
+        fallbackCheck().catch(() => handleSuccess(false));
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const color = resolveColor(status);

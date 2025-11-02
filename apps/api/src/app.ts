@@ -3,10 +3,10 @@ import cors from "cors";
 import helmet from "helmet";
 import { SHARED_READY } from "@agenda-amiga/shared"; // mantém caso use no projeto
 
-import { router } from "./http/routes";
-import { notFoundHandler } from "./http/middlewares/notFoundHandler";
-import { errorHandler } from "./http/middlewares/errorHandler";
+import { router as mainRouter } from "./http/routes";
+import criancasRoutes from "./routes/criancas";
 
+const API_PREFIX = "/api";
 
 function resolveCorsOrigin() {
   const raw = process.env.FRONTEND_ORIGIN;
@@ -51,15 +51,16 @@ export function makeApp() {
   });
 
 
-  app.get("/api/ping", (_req, res) => {
+  app.get(`${API_PREFIX}/ping`, (_req, res) => {
     res.json({ pong: true });
   });
 
-  app.use(router);
+  app.use(API_PREFIX, criancasRoutes);
+  app.use(API_PREFIX, mainRouter);
 
-
-  app.use(notFoundHandler);
-  app.use(errorHandler);
+  app.get("/", (_req, res) => {
+    res.json({ message: "API online" });
+  });
 
 
   console.log("[API] CORS origins:", origin);

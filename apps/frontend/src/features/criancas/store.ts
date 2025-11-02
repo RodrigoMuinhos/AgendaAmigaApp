@@ -1,10 +1,11 @@
+import axios from 'axios';
 import { create } from 'zustand';
 import {
   atualizarCrianca,
   buscarCriancaPorId,
-  criarCrianca,
   listarCriancas,
   removerCrianca,
+  criarCrianca as criarCriancaApi,
 } from './api';
 import type {
   Caderneta,
@@ -114,6 +115,73 @@ function calcularIdadeMeses(nascimentoISO: string, hoje = new Date()): number {
   return anos * 12 + meses;
 }
 
+function normalizarCriancaEntrada(rawInput: unknown): Crianca {
+  const raw = (rawInput ?? {}) as Record<string, unknown>;
+  const coerceString = (value: unknown) =>
+    typeof value === 'string' && value.trim().length ? value : undefined;
+
+  const sexo = raw.sexo === 'M' || raw.sexo === 'F' || raw.sexo === 'O' ? (raw.sexo as Crianca['sexo']) : 'O';
+
+  const responsavelRaw =
+    raw.responsavel && typeof raw.responsavel === 'object'
+      ? (raw.responsavel as Record<string, unknown>)
+      : undefined;
+  const responsavel =
+    responsavelRaw &&
+    (coerceString(responsavelRaw.nome) ||
+      coerceString(responsavelRaw.telefone) ||
+      coerceString(responsavelRaw.parentesco))
+      ? {
+          nome: coerceString(responsavelRaw.nome),
+          parentesco: coerceString(responsavelRaw.parentesco) as any,
+          telefone: coerceString(responsavelRaw.telefone),
+        }
+      : undefined;
+
+  const mapStringArray = (value: unknown) =>
+    Array.isArray(value)
+      ? (value.filter((item): item is string => typeof item === 'string' && item.trim().length) as string[])
+      : undefined;
+
+  const normalizeObject = (value: unknown) =>
+    value && typeof value === 'object' ? (value as Record<string, unknown>) : undefined;
+
+  return {
+    id: String(raw.id ?? ''),
+    nome: typeof raw.nome === 'string' ? raw.nome : '',
+    nascimentoISO: typeof raw.nascimentoISO === 'string' ? raw.nascimentoISO : '',
+    sexo,
+    responsavel,
+    tutorId: coerceString(raw.tutorId),
+    cartaoSUS: coerceString(raw.cartaoSUS),
+    cpf: coerceString(raw.cpf),
+    convenioOperadora: coerceString(raw.convenioOperadora),
+    convenioNumero: coerceString(raw.convenioNumero),
+    tipoSanguineo: coerceString(raw.tipoSanguineo) as Crianca['tipoSanguineo'],
+    alergias: mapStringArray(raw.alergias),
+    doencasCronicas: mapStringArray(raw.doencasCronicas),
+    medicacoes: mapStringArray(raw.medicacoes),
+    neurodivergencias: Array.isArray(raw.neurodivergencias)
+      ? (raw.neurodivergencias.filter(
+          (item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object',
+        ) as Crianca['neurodivergencias'])
+      : undefined,
+    pediatra: coerceString(raw.pediatra),
+    avatarUrl: coerceString(raw.avatarUrl),
+    nascimento: normalizeObject(raw.nascimento) as Crianca['nascimento'],
+    triagensNeonatais: normalizeObject(raw.triagensNeonatais) as Crianca['triagensNeonatais'],
+    vacinasNascimento: normalizeObject(raw.vacinasNascimento) as Crianca['vacinasNascimento'],
+    altaAleitamento: normalizeObject(raw.altaAleitamento) as Crianca['altaAleitamento'],
+    acompanhamentosPeriodicos: Array.isArray(raw.acompanhamentosPeriodicos)
+      ? (raw.acompanhamentosPeriodicos.filter(
+          (item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object',
+        ) as Crianca['acompanhamentosPeriodicos'])
+      : undefined,
+    criadoEmISO: coerceString(raw.criadoEmISO),
+    atualizadoEmISO: coerceString(raw.atualizadoEmISO),
+  };
+}
+
 type Pendencia = {
   vacina: VacinaCatalogoItem;
   doses: VacinaDose[];
@@ -176,14 +244,15 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
       set({ carregando: true, erro: undefined });
       try {
         const dados = await listarCriancas();
+        const normalizados = dados.map((item) => normalizarCriancaEntrada(item));
         set((estadoAtual) => {
           const selecionadaId = estadoAtual.selecionadaId;
-          const selecionadaExisteApos = dados.some((item) => item.id === selecionadaId);
+          const selecionadaExisteApos = normalizados.some((item) => item.id === selecionadaId);
           if (!selecionadaExisteApos) {
             persistirSelecionada(undefined);
           }
           return {
-            criancas: dados,
+            criancas: normalizados,
             carregando: false,
             selecionadaId: selecionadaExisteApos ? selecionadaId : undefined,
           };
@@ -196,20 +265,31 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
     criar: async (dados) => {
       set({ carregando: true, erro: undefined });
       try {
-        const novo = await criarCrianca(dados);
-        set((estadoAtual) => {
-          const criancasAtualizadas = [...estadoAtual.criancas, novo];
-          persistirSelecionada(novo.id);
-          return {
-            criancas: criancasAtualizadas,
-            selecionadaId: novo.id,
-            carregando: false,
-          };
+        const rawCrianca = await criarCriancaApi({
+          ...dados,
+          tutorId: dados.tutorId ?? 'demo-tutor',
         });
-        return novo;
+        const novaCrianca = normalizarCriancaEntrada(rawCrianca);
+        persistirSelecionada(novaCrianca.id);
+        set((estadoAtual) => ({
+          criancas: [novaCrianca, ...estadoAtual.criancas.filter((item) => item.id !== novaCrianca.id)],
+          selecionadaId: novaCrianca.id,
+          carregando: false,
+        }));
+        return novaCrianca;
       } catch (error) {
         console.error('Erro ao criar crianca', error);
-        set({ carregando: false, erro: mensagemErroPadrao });
+        const resposta =
+          axios.isAxiosError(error) && error.response?.data && typeof error.response.data === 'object'
+            ? (error.response.data as Record<string, unknown>)
+            : undefined;
+        const mensagem =
+          typeof resposta?.message === 'string'
+            ? (resposta.message as string)
+            : typeof resposta?.error === 'string'
+            ? (resposta.error as string)
+            : mensagemErroPadrao;
+        set({ carregando: false, erro: mensagem });
         return undefined;
       }
     },
@@ -220,7 +300,8 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
         if (!existente) {
           throw new Error('Crianca nao encontrada');
         }
-        const atualizado = await atualizarCrianca(id, dados);
+        const atualizadoRaw = await atualizarCrianca(id, dados);
+        const atualizado = normalizarCriancaEntrada(atualizadoRaw);
         set((estadoAtual) => ({
           criancas: estadoAtual.criancas.map((item) => (item.id === id ? atualizado : item)),
           carregando: false,
@@ -242,10 +323,12 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
       }
       set({ carregando: true, erro: undefined });
       try {
-        const encontrado = await buscarCriancaPorId(id);
-        if (encontrado) {
+        const encontradoRaw = await buscarCriancaPorId(id);
+        let encontrado: Crianca | undefined;
+        if (encontradoRaw) {
+          encontrado = normalizarCriancaEntrada(encontradoRaw);
           set((estadoAtual) => ({
-            criancas: [...estadoAtual.criancas, encontrado],
+            criancas: [...estadoAtual.criancas, encontrado!],
             carregando: false,
             selecionadaId: id,
           }));

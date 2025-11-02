@@ -122,31 +122,57 @@ export function ListaCriancasPage() {
 
       {criancas.length ? (
         <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-          {criancas.map((crianca) => (
-            <Card key={crianca.id} className="flex flex-col gap-4 rounded-3xl bg-[rgb(var(--color-surface))] p-6 shadow-soft">
+          {criancas.map((crianca, index) => {
+            const hasId = Boolean(crianca.id && crianca.id.trim().length);
+            const cardKey = hasId ? crianca.id : `tmp-${index}`;
+            const nome =
+              typeof crianca.nome === 'string' && crianca.nome.trim().length
+                ? crianca.nome
+                : 'Nome nao informado';
+            const nascimentoValido =
+              typeof crianca.nascimentoISO === 'string' &&
+              crianca.nascimentoISO.trim().length &&
+              !Number.isNaN(Date.parse(crianca.nascimentoISO));
+            const idadeTexto = nascimentoValido ? formatarIdade(crianca.nascimentoISO) : 'Data invalida';
+            const responsavelNome =
+              crianca.responsavel?.nome && crianca.responsavel.nome.trim().length
+                ? crianca.responsavel.nome
+                : 'Nao informado';
+            const telefoneResponsavel =
+              crianca.responsavel?.telefone && crianca.responsavel.telefone.trim().length
+                ? crianca.responsavel.telefone
+                : 'Sem telefone';
+
+            return (
+              <Card
+                key={cardKey}
+                className="flex flex-col gap-4 rounded-3xl bg-[rgb(var(--color-surface))] p-6 shadow-soft"
+              >
               <div className="flex items-center gap-4">
                 <AvatarMini crianca={crianca} />
                 <div>
-                  <h3 className="text-xl font-semibold text-[rgb(var(--color-text))]">{crianca.nome}</h3>
+                  <h3 className="text-xl font-semibold text-[rgb(var(--color-text))]">{nome}</h3>
                   <p className="flex items-center gap-2 text-sm text-[rgba(var(--color-text),0.7)]">
                     <Calendar className="h-4 w-4 text-[rgb(var(--color-primary))]" aria-hidden />
-                    <span>{formatarIdade(crianca.nascimentoISO)}</span>
+                    <span>{idadeTexto}</span>
                   </p>
                 </div>
               </div>
               <div className="rounded-2xl bg-[rgba(var(--color-primary),0.08)] px-4 py-3 text-sm text-[rgba(var(--color-text),0.75)]">
                 <p className="font-semibold text-[rgb(var(--color-primary))]">Responsavel</p>
-                <p>{crianca.responsavel?.nome ?? 'Nao informado'}</p>
+                <p>{responsavelNome}</p>
                 <p className="flex items-center gap-2">
                   <Phone className="h-4 w-4 text-[rgb(var(--color-primary))]" aria-hidden />
-                  <span>{crianca.responsavel?.telefone ?? 'Sem telefone'}</span>
+                  <span>{telefoneResponsavel}</span>
                 </p>
               </div>
               <Button
                 type="button"
                 variant="ghost"
                 className="justify-between"
+                disabled={!hasId}
                 onClick={() => {
+                  if (!hasId) return;
                   setSelecionada(crianca.id);
                   navigate(`/criancas/${crianca.id}`);
                 }}
@@ -154,8 +180,9 @@ export function ListaCriancasPage() {
                 Ver ficha
                 <ChevronRight className="h-5 w-5" aria-hidden />
               </Button>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       ) : null}
     </div>

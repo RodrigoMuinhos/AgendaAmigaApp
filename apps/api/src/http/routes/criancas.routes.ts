@@ -34,13 +34,30 @@ const responsavelSchema = z.object({
     .transform((value) => (value && value.length ? value : undefined)),
 });
 
+const genericObjectSchema = z
+  .record(z.string(), z.any())
+  .optional()
+  .transform((value) => {
+    if (!value) return undefined;
+    return hasRelevantValue(value) ? value : undefined;
+  });
+
+const acompanhamentosSchema = z
+  .array(z.record(z.string(), z.any()))
+  .optional()
+  .transform((items) => {
+    if (!items) return undefined;
+    const validItems = items.filter((item) => hasRelevantValue(item));
+    return validItems.length ? validItems : undefined;
+  });
+
 const criancaSchema = z.object({
   nome: z.string().trim().min(1).max(160),
   nascimentoISO: z
     .string()
     .trim()
     .refine((value) => !Number.isNaN(Date.parse(value)), { message: "Data de nascimento invalida" }),
-  sexo: z.enum(["M", "F"]),
+  sexo: z.enum(["M", "F", "O"]),
   responsavel: responsavelSchema,
   cartaoSUS: z
     .string()
@@ -100,6 +117,11 @@ const criancaSchema = z.object({
     .max(400)
     .optional()
     .transform((value) => (value && value.length ? value : undefined)),
+  nascimento: genericObjectSchema,
+  triagensNeonatais: genericObjectSchema,
+  vacinasNascimento: genericObjectSchema,
+  altaAleitamento: genericObjectSchema,
+  acompanhamentosPeriodicos: acompanhamentosSchema,
 });
 
 const requestSchema = criancaSchema.extend({
@@ -117,10 +139,21 @@ type CriancaRegistro = CriancaInput & {
   id: string;
   criadoEmISO: string;
   atualizadoEmISO: string;
+  nascimento?: Record<string, unknown>;
+  triagensNeonatais?: Record<string, unknown>;
+  vacinasNascimento?: Record<string, unknown>;
+  altaAleitamento?: Record<string, unknown>;
+  acompanhamentosPeriodicos?: Record<string, unknown>[];
 };
 
 type CriancaRow = {
-  payload: CriancaRegistro;
+  id: string;
+  tutor_id: string;
+  nome: string;
+  nascimento_iso: string;
+  criado_em: Date;
+  atualizado_em: Date;
+  payload: Partial<CriancaRegistro> | null;
 };
 
 const criancasRouter = Router();
@@ -133,11 +166,23 @@ function resolveTutorId(req: Request, fallback?: string) {
 
 function buildRegistro(id: string, input: CriancaInput, timestamps?: { criadoEmISO?: string; atualizadoEmISO?: string }): CriancaRegistro {
   const agora = new Date().toISOString();
+  const nascimento = normalizeObject(input.nascimento as Record<string, unknown> | undefined);
+  const triagensNeonatais = normalizeObject(
+    input.triagensNeonatais as Record<string, unknown> | undefined
+  );
+  const vacinasNascimento = normalizeObject(
+    input.vacinasNascimento as Record<string, unknown> | undefined
+  );
+  const altaAleitamento = normalizeObject(input.altaAleitamento as Record<string, unknown> | undefined);
+  const acompanhamentosPeriodicos = normalizeArrayOfObjects(
+    input.acompanhamentosPeriodicos as Array<Record<string, unknown>> | undefined
+  );
+
   return {
     id,
     nome: input.nome.trim(),
     nascimentoISO: input.nascimentoISO,
-    sexo: input.sexo,
+    sexo: input.sexo === "M" || input.sexo === "F" || input.sexo === "O" ? input.sexo : "O",
     responsavel: {
       nome: input.responsavel.nome.trim(),
       parentesco: input.responsavel.parentesco,
@@ -159,18 +204,156 @@ function buildRegistro(id: string, input: CriancaInput, timestamps?: { criadoEmI
       : [],
     pediatra: input.pediatra,
     avatarUrl: input.avatarUrl,
+    ...(nascimento ? { nascimento } : {}),
+    ...(triagensNeonatais ? { triagensNeonatais } : {}),
+    ...(vacinasNascimento ? { vacinasNascimento } : {}),
+    ...(altaAleitamento ? { altaAleitamento } : {}),
+    ...(acompanhamentosPeriodicos ? { acompanhamentosPeriodicos } : {}),
     criadoEmISO: timestamps?.criadoEmISO ?? agora,
     atualizadoEmISO: timestamps?.atualizadoEmISO ?? agora,
   };
 }
 
-function normalizeRegistro(raw: CriancaRegistro): CriancaRegistro {
+function asOptionalString(value: unknown) {
+  return typeof value === "string" && value.trim().length ? value : undefined;
+}
+
+function hasRelevantValue(value: unknown): boolean {
+  if (value === undefined || value === null) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.some((item) => hasRelevantValue(item));
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).some((item) => hasRelevantValue(item));
+  }
+  return true;
+}
+
+function normalizeObject(value: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  if (!value) return undefined;
+  const normalized: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(value)) {
+    if (raw === undefined || raw === null) continue;
+    if (typeof raw === "string") {
+      const trimmed = raw.trim();
+      if (trimmed.length) {
+        normalized[key] = trimmed;
+      }
+      continue;
+    }
+    if (Array.isArray(raw)) {
+      const filtered = raw.filter((item) => hasRelevantValue(item));
+      if (filtered.length) {
+        normalized[key] = filtered;
+      }
+      continue;
+    }
+    if (typeof raw === "object") {
+      const nested = normalizeObject(raw as Record<string, unknown>);
+      if (nested && Object.keys(nested).length) {
+        normalized[key] = nested;
+      }
+      continue;
+    }
+    normalized[key] = raw;
+  }
+  return Object.keys(normalized).length ? normalized : undefined;
+}
+
+function normalizeArrayOfObjects(items: Array<Record<string, unknown>> | undefined) {
+  if (!Array.isArray(items)) return undefined;
+  const normalized = items
+    .map((item) => normalizeObject(item))
+    .filter(
+      (item): item is Record<string, unknown> =>
+        item !== undefined && item !== null && typeof item === "object" && Object.keys(item).length > 0
+    );
+  return normalized.length ? normalized : undefined;
+}
+
+function completarRegistro(row: CriancaRow): CriancaRegistro {
+  const payload = row.payload ?? {};
+  const alergias = Array.isArray(payload.alergias) ? payload.alergias.filter((item) => typeof item === "string" && item.trim().length) : [];
+  const doencasCronicas = Array.isArray(payload.doencasCronicas)
+    ? payload.doencasCronicas.filter((item) => typeof item === "string" && item.trim().length)
+    : [];
+  const medicacoes = Array.isArray(payload.medicacoes)
+    ? payload.medicacoes.filter((item) => typeof item === "string" && item.trim().length)
+    : [];
+  const neurodivergencias = Array.isArray(payload.neurodivergencias)
+    ? payload.neurodivergencias
+        .filter(
+          (item): item is CriancaRegistro["neurodivergencias"][number] =>
+            Boolean(item) && typeof item === "object" && typeof (item as { tipo?: unknown }).tipo === "string"
+        )
+        .map((item) => ({
+          tipo: item.tipo,
+          ...(asOptionalString(item.grau) ? { grau: asOptionalString(item.grau) } : {}),
+        }))
+    : [];
+
+  const responsavelRaw = payload.responsavel && typeof payload.responsavel === "object" ? payload.responsavel : undefined;
+  const responsavel = {
+    nome: asOptionalString(responsavelRaw?.nome) ?? "",
+    parentesco: asOptionalString(responsavelRaw?.parentesco),
+    telefone: asOptionalString(responsavelRaw?.telefone),
+  } satisfies CriancaRegistro["responsavel"];
+
+  const nascimento =
+    payload.nascimento && typeof payload.nascimento === "object"
+      ? normalizeObject(payload.nascimento as Record<string, unknown>)
+      : undefined;
+  const triagensNeonatais =
+    payload.triagensNeonatais && typeof payload.triagensNeonatais === "object"
+      ? normalizeObject(payload.triagensNeonatais as Record<string, unknown>)
+      : undefined;
+  const vacinasNascimento =
+    payload.vacinasNascimento && typeof payload.vacinasNascimento === "object"
+      ? normalizeObject(payload.vacinasNascimento as Record<string, unknown>)
+      : undefined;
+  const altaAleitamento =
+    payload.altaAleitamento && typeof payload.altaAleitamento === "object"
+      ? normalizeObject(payload.altaAleitamento as Record<string, unknown>)
+      : undefined;
+  const acompanhamentosPeriodicos = normalizeArrayOfObjects(
+    payload.acompanhamentosPeriodicos as Array<Record<string, unknown>> | undefined
+  );
+
+  const criadoEmISO =
+    typeof payload.criadoEmISO === "string" && payload.criadoEmISO.trim().length
+      ? payload.criadoEmISO
+      : row.criado_em.toISOString();
+  const atualizadoEmISO =
+    typeof payload.atualizadoEmISO === "string" && payload.atualizadoEmISO.trim().length
+      ? payload.atualizadoEmISO
+      : row.atualizado_em.toISOString();
+
   return {
-    ...raw,
-    alergias: raw.alergias?.length ? raw.alergias : [],
-    doencasCronicas: raw.doencasCronicas?.length ? raw.doencasCronicas : [],
-    medicacoes: raw.medicacoes?.length ? raw.medicacoes : [],
-    neurodivergencias: raw.neurodivergencias?.length ? raw.neurodivergencias : [],
+    id: asOptionalString(payload.id) ?? row.id,
+    nome: asOptionalString(payload.nome) ?? row.nome,
+    nascimentoISO: asOptionalString(payload.nascimentoISO) ?? row.nascimento_iso,
+    sexo:
+      payload.sexo === "M" || payload.sexo === "F" || payload.sexo === "O"
+        ? payload.sexo
+        : "O",
+    responsavel,
+    cartaoSUS: asOptionalString(payload.cartaoSUS),
+    cpf: asOptionalString(payload.cpf),
+    convenioOperadora: asOptionalString(payload.convenioOperadora),
+    convenioNumero: asOptionalString(payload.convenioNumero),
+    tipoSanguineo: asOptionalString(payload.tipoSanguineo) as CriancaRegistro["tipoSanguineo"],
+    alergias,
+    doencasCronicas,
+    medicacoes,
+    neurodivergencias,
+    pediatra: asOptionalString(payload.pediatra),
+    avatarUrl: asOptionalString(payload.avatarUrl),
+    nascimento,
+    triagensNeonatais,
+    vacinasNascimento,
+    altaAleitamento,
+    acompanhamentosPeriodicos,
+    criadoEmISO,
+    atualizadoEmISO,
   };
 }
 
@@ -180,7 +363,7 @@ criancasRouter.get(
     const tutorId = resolveTutorId(req);
     const result = await query<CriancaRow>(
       `
-        SELECT payload
+        SELECT id, tutor_id, nome, nascimento_iso, criado_em, atualizado_em, payload
         FROM criancas
         WHERE tutor_id = $1
         ORDER BY criado_em DESC
@@ -188,7 +371,7 @@ criancasRouter.get(
       [tutorId]
     );
 
-    const criancas = result.rows.map((row) => normalizeRegistro(row.payload));
+    const criancas = result.rows.map((row) => completarRegistro(row));
     res.json(criancas);
   })
 );
@@ -200,7 +383,7 @@ criancasRouter.get(
     const tutorId = resolveTutorId(req);
     const result = await query<CriancaRow>(
       `
-        SELECT payload
+        SELECT id, tutor_id, nome, nascimento_iso, criado_em, atualizado_em, payload
         FROM criancas
         WHERE id = $1 AND tutor_id = $2
         LIMIT 1
@@ -213,7 +396,7 @@ criancasRouter.get(
       return;
     }
 
-    res.json(normalizeRegistro(result.rows[0].payload));
+    res.json(completarRegistro(result.rows[0]));
   })
 );
 
@@ -255,7 +438,7 @@ criancasRouter.put(
 
     const existente = await query<CriancaRow>(
       `
-        SELECT payload
+        SELECT id, tutor_id, nome, nascimento_iso, criado_em, atualizado_em, payload
         FROM criancas
         WHERE id = $1 AND tutor_id = $2
         LIMIT 1
@@ -268,7 +451,7 @@ criancasRouter.put(
       return;
     }
 
-    const atual = normalizeRegistro(existente.rows[0].payload);
+    const atual = completarRegistro(existente.rows[0]);
     const registro = buildRegistro(id, dados, {
       criadoEmISO: atual.criadoEmISO,
       atualizadoEmISO: new Date().toISOString(),

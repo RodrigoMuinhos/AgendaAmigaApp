@@ -2,7 +2,10 @@
 import "./env";
 import http from "http";
 import { AddressInfo } from "net";
+import { PrismaClient } from "@prisma/client";
 import { makeApp } from "./app";
+import { notFoundHandler } from "./http/middlewares/notFoundHandler";
+import { errorHandler } from "./http/middlewares/errorHandler";
 
 /**
  * Resolve e valida a porta do servidor.
@@ -21,9 +24,51 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 const PORT = getPort();
 
 const app = makeApp();
+const prisma = new PrismaClient();
+
+app.get("/api/__debug/db", async (_req, res) => {
+  const [sp] = await prisma.$queryRawUnsafe<any[]>("SHOW search_path");
+  const [db] = await prisma.$queryRawUnsafe<any[]>(
+    "SELECT current_database() AS db, current_schema() AS schema"
+  );
+  const [host] = await prisma.$queryRawUnsafe<any[]>(
+    "SELECT inet_server_addr()::text AS addr, inet_server_port() AS port"
+  );
+  res.json({
+    database: db,
+    search_path: sp,
+    server: host,
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      DATABASE_URL: (process.env.DATABASE_URL || "").replace(/:[^:@/]+@/, "://*****@"),
+      DIRECT_URL: (process.env.DIRECT_URL || "").replace(/:[^:@/]+@/, "://*****@"),
+    },
+  });
+});
+
+app.get("/api/__debug/prisma", async (_req, res) => {
+  try {
+    const [r1] = await prisma.$queryRawUnsafe<any[]>(
+      "SELECT to_regclass('app.criancas')::text AS t"
+    );
+
+    const total = await prisma.criancas.count();
+
+    res.json({
+      regclass: r1?.t,
+      prismaModelCount: total,
+    });
+  } catch (error) {
+    const err = error as Error;
+    res.status(500).json({
+      error: err.message,
+      stack: process.env.NODE_ENV === "production" ? undefined : err.stack,
+    });
+  }
+});
 
 /**
- * Healthcheck básico (200 OK) — seguro para usar no Docker healthcheck.
+ * Healthcheck básico (200 OK) – seguro para usar no Docker healthcheck.
  * Mantém fora de middlewares de auth/rate-limit para não flapar readiness.
  */
 app.get("/health", (_req, res) => {
@@ -34,6 +79,9 @@ app.get("/health", (_req, res) => {
 app.get("/", (_req, res) => {
   res.status(200).json({ name: "Agenda Amiga API", status: "ok" });
 });
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 const server = http.createServer(app);
 

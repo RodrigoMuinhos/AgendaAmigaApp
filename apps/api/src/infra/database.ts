@@ -19,6 +19,12 @@ pool.on("error", (error) => {
   console.error("PostgreSQL pool error", error);
 });
 
+pool.on("connect", (client) => {
+  client
+    .query("SET search_path TO app, public;")
+    .catch((error) => console.error("Failed to set search_path", error));
+});
+
 export type DbClient = PoolClient;
 
 export async function query<T extends QueryResultRow = QueryResultRow>(text: string, params?: any[]): Promise<QueryResult<T>> {
@@ -43,5 +49,4 @@ export async function withTransaction<T>(handler: (client: PoolClient) => Promis
 export function getPool() {
   return pool;
 }
-
 

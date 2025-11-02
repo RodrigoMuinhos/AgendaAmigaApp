@@ -27,13 +27,14 @@
 
     "// ====== WEB (Frontend) ======": "",
     "web:build": "npm run build -w @agenda-amiga/frontend",
-    "web:dev": "npm run dev -w @agenda-amiga/frontend",
+    "web:dev": "node scripts/web-dev.js",
+    "web:dev:frontend": "npm run dev -w @agenda-amiga/frontend",
     "web:dev:lan": "npm run dev:lan -w @agenda-amiga/frontend",
     "web:preview:lan": "npm run preview:lan -w @agenda-amiga/frontend",
 
     "// ====== TOP-LEVEL TASKS ======": "",
     "build": "npm run shared:build && npm run api:build && npm run web:build",
-    "dev": "concurrently -n SHARED,API,WEB -c yellow,cyan,magenta \"npm run shared:dev\" \"npm run api:dev\" \"npm run web:dev\"",
+    "dev": "concurrently -n SHARED,API,WEB -c yellow,cyan,magenta \"npm run shared:dev\" \"npm run api:dev\" \"npm run web:dev:frontend\"",
     "dev:lan": "concurrently -n SHARED,API,WEB -c yellow,cyan,magenta \"npm run shared:dev\" \"npm run api:dev\" \"npm run web:dev:lan\"",
 
     "// ====== UTIL ======": "",

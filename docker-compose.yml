@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   agendaamiga_db:
     image: postgres:16
@@ -10,7 +8,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: agenda_amiga_db
     ports:
-      - "5433:5432"           # Expondo para host (psql local: 5433)
+      - "5433:5432"        # acesso pelo host: localhost:5433
     volumes:
       - agendaamiga_db_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,130 +17,23 @@ services:
       timeout: 5s
       retries: 20
 
-  # =========================
-  # BACKEND - DESENVOLVIMENTO
-  # =========================
   api:
-    profiles: ["dev"]
     build:
-      context: .
-      dockerfile: Dockerfile     # usa seu Dockerfile único da raiz
-      target: development        # stage de dev
-    container_name: agenda-amiga-api-dev
+      context: ./apps/api
+      dockerfile: Dockerfile
+      target: development
+    container_name: agendaamiga_api
     working_dir: /app
-    environment:
-      NODE_ENV: development
-      HOST: 0.0.0.0
-      PORT: 3000
-      CHOKIDAR_USEPOLLING: "true"
-      WATCHPACK_POLLING: "true"
-      DATABASE_URL: postgresql://postgres:postgres@agendaamiga_db:5432/agenda_amiga_db
-      DIRECT_URL:   postgresql://postgres:postgres@agendaamiga_db:5432/agenda_amiga_db
-      SHADOW_DATABASE_URL: postgresql://postgres:postgres@agendaamiga_db:5432/agenda_amiga_db_shadow
-    command: >
-      sh -c '
-        set -exuo pipefail
-        if [ ! -f /app/.npm-installed ]; then
-          npm ci --legacy-peer-deps
-          touch /app/.npm-installed
-        fi
-        result=$$(PGPASSWORD=postgres psql -h agendaamiga_db -U postgres -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='\''agenda_amiga_db_shadow'\''" | tr -d "[:space:]")
-        if [ "$$result" != "1" ]; then
-          echo ">> Criando shadow database..."
-          PGPASSWORD=postgres psql -h agendaamiga_db -U postgres -d postgres -c "CREATE DATABASE agenda_amiga_db_shadow"
-        fi
-        echo ">> Prisma generate..."
-        npx prisma generate --schema=apps/api/prisma/schema.prisma
-        MIGR_DIR=apps/api/prisma/migrations
-        if [ ! -d "$$MIGR_DIR" ] || [ -z "$$(ls -A "$$MIGR_DIR" 2>/dev/null)" ]; then
-          echo ">> Nenhuma migration — prisma db push (bootstrap)"
-          npx prisma db push --schema=apps/api/prisma/schema.prisma
-        else
-          echo ">> Aplicando migrations (deploy)"
-          npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
-        fi
-        npx prisma studio --schema=apps/api/prisma/schema.prisma --hostname 0.0.0.0 --port 5555 --browser none &
-        echo ">> Subindo API (dev)..."
-        npm run dev --workspace @agenda-amiga/api
-      '
-    volumes:
-      - .:/app
-      - agendaamiga_node_modules:/app/node_modules
     ports:
-      - "3000:3000"     # API dev
-      - "5555:5555"     # Prisma Studio
+      - "3000:3000"
+    env_file:
+      - ./.env.local
     depends_on:
       agendaamiga_db:
         condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "node -e \"require('net').connect(process.env.PORT||3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))\" || curl -fsS http://localhost:3000/health >/dev/null 2>&1 || curl -fsS http://localhost:3000 >/dev/null 2>&1 || exit 1"
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 60
-      start_period: 300s
-
-  web:
-    profiles: ["dev"]
-    build:
-      context: .
-      dockerfile: apps/frontend/Dockerfile.dev
-    container_name: agenda-amiga-web-dev
-    working_dir: /app/apps/frontend
-    environment:
-      VITE_API_URL: http://localhost:3000
-      CHOKIDAR_USEPOLLING: "true"
-      WATCHPACK_POLLING: "true"
-    command: >
-      sh -c "
-        set -e
-        if [ ! -f /app/.npm-installed ]; then
-          cd /app && npm ci --legacy-peer-deps
-          touch /app/.npm-installed
-        fi
-        cd /app/apps/frontend && npm run dev --workspace @agenda-amiga/frontend -- --host
-      "
     volumes:
-      - .:/app
-      - agendaamiga_node_modules:/app/node_modules
-      - agendaamiga_frontend_node_modules:/app/apps/frontend/node_modules
-    ports:
-      - "5173:5173"
-    depends_on:
-      api:
-        condition: service_healthy
-
-  # ======================
-  # BACKEND - PRODUÇÃO
-  # ======================
-  api_prod:
-    profiles: ["prod"]
-    image: agenda-amiga-api:prod         # usa a imagem que você já buildou localmente
-    container_name: agenda-amiga-api-prod
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: postgresql://postgres:postgres@agendaamiga_db:5432/agenda_amiga_db
-    depends_on:
-      agendaamiga_db:
-        condition: service_healthy
-    ports:
-      - "3000:3000"    # cuidado se o serviço dev (api) também estiver rodando
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "node -e \"require('net').connect(process.env.PORT||3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))\" || exit 1"
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 30s
+      - ./apps/api:/app
+      - /app/node_modules
 
 volumes:
-  agendaamiga_node_modules:
-  agendaamiga_frontend_node_modules:
   agendaamiga_db_data:

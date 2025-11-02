@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
+  output   = "../../../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -33,13 +33,14 @@ model pacientes {
 }
 
 model criancas {
-  id             String   @id
-  tutor_id       String
-  nome           String
-  nascimento_iso String
-  payload        Json
-  criado_em      DateTime @default(now()) @db.Timestamptz(6)
-  atualizado_em  DateTime @updatedAt @db.Timestamptz(6)
+  id                 String               @id
+  tutor_id           String
+  nome               String
+  nascimento_iso     String
+  payload            Json
+  criado_em          DateTime             @default(now()) @db.Timestamptz(6)
+  atualizado_em      DateTime             @updatedAt @db.Timestamptz(6)
+  relatorios_diarios relatorios_diarios[]
 
   @@index([tutor_id, criado_em], map: "idx_criancas_tutor")
   @@map("criancas")
@@ -360,6 +361,24 @@ model Preferences {
   userId      String   @id
 
   @@map("nutrition_preferences")
+}
+
+model relatorios_diarios {
+  id            String   @id @default(cuid())
+  crianca_id    String
+  dia           DateTime @db.Date
+  humor         String?
+  hidratacao    Boolean?
+  apetite       String?
+  observacoes   String?
+  criado_em     DateTime @default(now()) @db.Timestamptz(6)
+  atualizado_em DateTime @updatedAt @db.Timestamptz(6)
+
+  crianca criancas @relation(fields: [crianca_id], references: [id], onDelete: Cascade)
+
+  @@unique([crianca_id, dia], map: "uniq_relatorio_por_crianca_dia")
+  @@index([crianca_id, dia], map: "idx_relatorios_crianca_dia")
+  @@map("relatorios_diarios")
 }
 
 enum EsquemaTipo {
