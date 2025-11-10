@@ -1,4 +1,6 @@
+// PatientStep.tsx
 import type { UseFieldArrayReturn, UseFormReturn } from 'react-hook-form';
+import type { TFunction } from 'i18next';
 import { MemberCard } from './MemberCard';
 import type { FamilyFormValues } from '../utils/familyFormSchema';
 
@@ -7,13 +9,17 @@ type PatientStepProps = {
   membersArray: UseFieldArrayReturn<FamilyFormValues, 'members'>;
   easyMode: boolean;
   removeLabel: string;
-  t: (key: string) => string;
+  t: TFunction<'translation'>;
 };
 
-export function PatientStep({ form, membersArray, easyMode, removeLabel, t }: PatientStepProps) {
-  if (!membersArray.fields.length) {
-    return null;
-  }
+export function PatientStep({
+  form,
+  membersArray,
+  easyMode,
+  removeLabel,
+  t,
+}: PatientStepProps) {
+  if (!membersArray.fields.length) return null;
 
   return (
     <MemberCard
@@ -24,9 +30,6 @@ export function PatientStep({ form, membersArray, easyMode, removeLabel, t }: Pa
       onRemove={() => undefined}
       removeLabel={removeLabel}
       t={t}
-      mode="general"
     />
   );
 }
-
-

@@ -1,0 +1,7 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build -w @agenda-amiga/frontend",
+  "outputDirectory": "apps/frontend/dist",
+  "devCommand": "npm run dev -w @agenda-amiga/frontend",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
