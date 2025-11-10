@@ -11,7 +11,7 @@ datasource db {
 }
 
 model pacientes {
-  id                    String                    @id
+  id                    String                    @id @default(cuid())
   tutor_id              String
   nome_completo         String
   condicoes             String[]                  @default([])
@@ -33,35 +33,20 @@ model pacientes {
 }
 
 model criancas {
-  id                 String               @id
-  tutor_id           String
-  nome               String
-  nascimento_iso     String
-  payload            Json
-  criado_em          DateTime             @default(now()) @db.Timestamptz(6)
-  atualizado_em      DateTime             @updatedAt @db.Timestamptz(6)
-  relatorios_diarios relatorios_diarios[]
-  tutor              usuarios             @relation(fields: [tutor_id], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  tutor_id       String
+  nome           String
+  nascimento_iso String
+  payload        Json
+  criado_em      DateTime @default(now()) @db.Timestamptz(6)
+  atualizado_em  DateTime @updatedAt @db.Timestamptz(6)
 
   @@index([tutor_id, criado_em], map: "idx_criancas_tutor")
   @@map("criancas")
 }
 
-model usuarios {
-  id                       String    @id
-  nome                     String
-  email                    String    @unique
-  senha_hash               String
-  responsavel_nome         String\n  responsavel_parentesco   String?\n  responsavel_telefone     String?\n  responsavel_cpf          String?
-  criado_em                DateTime  @default(now()) @db.Timestamptz(6)
-  atualizado_em            DateTime  @updatedAt @db.Timestamptz(6)
-  criancas                 criancas[]
-
-  @@map("usuarios")
-}
-
 model profissionais {
-  id            String         @id
+  id            String         @id @default(cuid())
   nome          String
   especialidade String?
   telefone      String?
@@ -73,7 +58,7 @@ model profissionais {
 }
 
 model medicamentos {
-  id                     String       @id
+  id                     String       @id @default(cuid())
   paciente_id            String
   nome                   String
   dosagem                Decimal      @db.Decimal(10, 3)
@@ -95,7 +80,7 @@ model medicamentos {
 }
 
 model dose_logs {
-  id               String       @id
+  id               String       @id @default(cuid())
   medicamento_id   String
   horario_previsto DateTime     @db.Timestamptz(6)
   status           DoseStatus
@@ -109,7 +94,7 @@ model dose_logs {
 }
 
 model atendimentos {
-  id              String            @id
+  id              String            @id @default(cuid())
   paciente_id     String
   tipo            TipoAtendimento
   area            String?
@@ -130,7 +115,7 @@ model atendimentos {
 }
 
 model lembretes {
-  id             String        @id
+  id             String        @id @default(cuid())
   atendimento_id String
   minutos_antes  Int
   canal          CanalLembrete
@@ -143,7 +128,7 @@ model lembretes {
 }
 
 model share_links {
-  id            String    @id
+  id            String    @id @default(cuid())
   tutor_id      String
   token         String    @unique
   escopo        Json
@@ -157,7 +142,7 @@ model share_links {
 }
 
 model familias {
-  id                         String            @id
+  id                         String            @id @default(cuid())
   nome                       String
   cep                        String?
   endereco                   String?
@@ -180,7 +165,7 @@ model familias {
 }
 
 model familia_membros {
-  id               String   @id
+  id               String   @id @default(cuid())
   familia_id       String
   nome             String
   data_nascimento  DateTime @db.Date
@@ -208,7 +193,7 @@ model familia_membros {
 }
 
 model cuidadores {
-  id            String   @id
+  id            String   @id @default(cuid())
   familia_id    String
   nome          String
   relacao       String?
@@ -222,7 +207,7 @@ model cuidadores {
 }
 
 model tratamentos {
-  id            String    @id
+  id            String    @id @default(cuid())
   familia_id    String
   nome          String
   dose          String
@@ -377,24 +362,6 @@ model Preferences {
   @@map("nutrition_preferences")
 }
 
-model relatorios_diarios {
-  id            String   @id @default(cuid())
-  crianca_id    String
-  dia           DateTime @db.Date
-  humor         String?
-  hidratacao    Boolean?
-  apetite       String?
-  observacoes   String?
-  criado_em     DateTime @default(now()) @db.Timestamptz(6)
-  atualizado_em DateTime @updatedAt @db.Timestamptz(6)
-
-  crianca criancas @relation(fields: [crianca_id], references: [id], onDelete: Cascade)
-
-  @@unique([crianca_id, dia], map: "uniq_relatorio_por_crianca_dia")
-  @@index([crianca_id, dia], map: "idx_relatorios_crianca_dia")
-  @@map("relatorios_diarios")
-}
-
 enum EsquemaTipo {
   DIARIO_HORARIOS_FIXOS
   SEMANAL_DIAS_FIXOS
@@ -455,4 +422,3 @@ enum MealPeriod {
   AFTERNOON
   DINNER
 }
-
