@@ -3,13 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "packageManager": "npm@11.6.2",
-  "engines": {
-    "node": ">=20"
-  },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "engines": { "node": ">=20" },
+
+  "workspaces": ["apps/*", "packages/*"],
+
   "scripts": {
     "// ====== PRE HOOKS ======": "",
     "predev": "npm run shared:build",
@@ -37,11 +34,20 @@
     "dev": "concurrently -n SHARED,API,WEB -c yellow,cyan,magenta \"npm run shared:dev\" \"npm run api:dev\" \"npm run web:dev:frontend\"",
     "dev:lan": "concurrently -n SHARED,API,WEB -c yellow,cyan,magenta \"npm run shared:dev\" \"npm run api:dev\" \"npm run web:dev:lan\"",
 
+    "// ====== RENDER (Node sem Docker) ======": "",
+    "render:build": "npm run render:build -w @agenda-amiga/api",
+    "render:start": "npm run render:start -w @agenda-amiga/api",
+
+    "// ====== DOCKER (conveniência) ======": "",
+    "docker:build": "docker build -t agendaamiga-api:latest .",
+    "docker:run": "docker run --rm -p 3000:3000 --env-file ./.env.docker agendaamiga-api:latest",
+
     "// ====== UTIL ======": "",
     "clean": "npx rimraf node_modules packages/**/dist apps/**/dist package-lock.json",
     "versions": "node -v && npm -v",
     "port:free:3333": "powershell -Command \"$tcpPid=(Get-NetTCPConnection -LocalPort 3333 -State Listen -ErrorAction SilentlyContinue).OwningProcess; if($tcpPid){Stop-Process -Id $tcpPid -Force; Write-Host 'Killed ' $tcpPid} else { Write-Host '3333 livre' }\""
   },
+
   "devDependencies": {
     "@types/node": "^24.9.1",
     "vitest": "^1.6.0",
@@ -51,7 +57,5 @@
     "tsx": "^4.20.6"
   },
   "dependencies": {},
-  "overrides": {
-    "picomatch": "2.3.1"
-  }
+  "overrides": { "picomatch": "2.3.1" }
 }

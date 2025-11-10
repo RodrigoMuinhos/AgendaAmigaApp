@@ -27,6 +27,7 @@
   "dependencies": {
     "@agenda-amiga/shared": "file:../../packages/shared",
     "@prisma/client": "^6.18.0",
+    "@vitejs/plugin-react": "^4.7.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
