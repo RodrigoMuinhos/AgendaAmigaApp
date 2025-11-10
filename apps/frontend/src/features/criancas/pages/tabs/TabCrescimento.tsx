@@ -6,7 +6,6 @@ import { EmptyState } from '../../../../components/ui/EmptyState';
 import { asArray } from '../../../../core/utils/arrays';
 import { useCriancasStore } from '../../store';
 import { ResumoCrescimento } from '../../components/Crescimento/ResumoCrescimento';
-import { TabelaCrescimento } from '../../components/Crescimento/TabelaCrescimento';
 import { RegistroCrescimentoModal } from '../../components/Crescimento/RegistroCrescimentoModal';
 import { CrescimentoChart } from '../../components/Crescimento/CrescimentoChart';
 import { analisarMedidasCrescimento } from '../../utils/crescimento';
@@ -31,6 +30,7 @@ export function TabCrescimento() {
     editarCrescimento,
     listarMedidasCrescimento,
     getCaderneta,
+    removerCrescimento,
     crianca,
   } = useCriancasStore((state) => ({
     registros: asArray(state.cadernetas[criancaId]?.crescimento?.registros),
@@ -38,6 +38,7 @@ export function TabCrescimento() {
     editarCrescimento: state.editarCrescimento,
     listarMedidasCrescimento: state.listarMedidasCrescimento,
     getCaderneta: state.getCaderneta,
+    removerCrescimento: state.removerCrescimento,
     crianca: state.criancas.find((item) => item.id === criancaId),
   }));
 
@@ -50,7 +51,6 @@ export function TabCrescimento() {
     () => analisarMedidasCrescimento(crianca, medidas),
     [crianca, medidas],
   );
-  const analiseMaisRecente = analises[0];
 
   const handleCriar = () => setModal({ aberto: true, modo: 'criar' });
   const handleEditarUltimo = () => {
@@ -69,6 +69,12 @@ export function TabCrescimento() {
     }
   };
 
+  const handleRemover = (registro: CrescimentoRegistro) => {
+    const confirmar = window.confirm('Deseja remover esta medida? Esta acao nao pode ser desfeita.');
+    if (!confirmar) return;
+    removerCrescimento(criancaId, registro);
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-4 rounded-3xl border border-[rgba(var(--color-border),0.3)] bg-[rgb(var(--color-surface))] p-6 shadow-soft sm:flex-row sm:items-center sm:justify-between">
@@ -80,20 +86,31 @@ export function TabCrescimento() {
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           {analises.length ? (
-            <Button type="button" variant="ghost" size="sm" onClick={handleEditarUltimo}>
-              <Edit className="h-4 w-4" aria-hidden />
-              <span>Editar ultima</span>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleEditarUltimo}
+              className="h-11 w-11 px-0 py-0"
+              aria-label="Editar ultima medida"
+              title="Editar ultima medida"
+            >
+              <Edit className="h-5 w-5" aria-hidden />
             </Button>
           ) : null}
-          <Button type="button" onClick={handleCriar} className="self-start sm:self-auto">
+          <Button
+            type="button"
+            onClick={handleCriar}
+            className="h-11 w-11 px-0 py-0 self-start sm:self-auto"
+            aria-label="Adicionar medidas"
+            title="Adicionar medidas"
+          >
             <Scale className="h-5 w-5" aria-hidden />
-            <span>Adicionar medidas</span>
           </Button>
         </div>
       </header>
 
       {analises.length ? (
-        <ResumoCrescimento destaque={analiseMaisRecente} onEditar={handleEditarUltimo} />
+        <ResumoCrescimento analises={analises} onEditar={handleEditarUltimo} onRemover={handleRemover} />
       ) : (
         <EmptyState
           icon={<Ruler className="h-8 w-8" aria-hidden />}
@@ -104,13 +121,6 @@ export function TabCrescimento() {
 
       {analises.length ? (
         <CrescimentoChart analises={analises} />
-      ) : null}
-
-      {analises.length ? (
-        <section className="space-y-4">
-          <h3 className="text-xl font-semibold text-[rgb(var(--color-text))]">Historico de medidas</h3>
-          <TabelaCrescimento analises={analises} />
-        </section>
       ) : null}
 
       <RegistroCrescimentoModal

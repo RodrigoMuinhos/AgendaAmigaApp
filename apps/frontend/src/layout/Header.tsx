@@ -1,19 +1,22 @@
-import { Bell, LogOut, SlidersHorizontal } from 'lucide-react';
+import { Bell, Clock, LogOut, SlidersHorizontal } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { HealthProbe } from '../HealthProbe';
 import { env } from '../core/config/env';
 import { EasyModeToggle } from '../components/EasyModeToggle';
 import { LanguageToggle } from '../components/LanguageToggle';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { VoiceButton } from '../components/VoiceButton';
+import { useAuthStore } from '../features/auth/store';
 
 export function Header() {
   const { t, i18n } = useTranslation();
   const [isMenuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const voiceLang = i18n.language.startsWith('en') ? 'en-US' : 'pt-BR';
+  const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -43,7 +46,12 @@ export function Header() {
 
   const handleLogout = () => {
     setMenuOpen(false);
-    window.location.assign(env.logoutRedirect);
+    logout();
+    if (env.logoutRedirect) {
+      navigate(env.logoutRedirect, { replace: true });
+    } else {
+      navigate('/login', { replace: true });
+    }
   };
 
   return (
@@ -51,9 +59,14 @@ export function Header() {
       <div className="mx-auto w-full max-w-6xl px-4 py-3 sm:px-8">
         <div className="flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap sm:gap-4">
           <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[rgba(var(--color-border),0.5)] bg-[rgba(var(--color-primary),0.12)] text-[rgb(var(--color-primary))]">
-              <AgendaLogo className="h-6 w-6" />
-            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/inicio')}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[rgba(var(--color-border),0.5)] bg-[rgba(var(--color-primary),0.12)] text-[rgb(var(--color-primary))] transition hover:border-[rgba(var(--color-primary),0.6)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(30,136,229,0.35)]"
+              aria-label={t('nav.home', 'Inicio')}
+            >
+              <Clock className="h-6 w-6" aria-hidden />
+            </button>
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
               <span className="whitespace-nowrap text-sm font-semibold uppercase tracking-[0.32em] text-[rgb(var(--color-primary))] sm:text-base">
                 {t('app.name')}

@@ -5,12 +5,6 @@ import { api } from '../../services/api';
 import { asArray } from '../../core/utils/arrays';
 import type { CriancaCreateInput } from './types';
 
-const DEFAULT_TUTOR_ID = 'demo-tutor';
-
-function tutorParams(tutorId = DEFAULT_TUTOR_ID) {
-  return { tutorId };
-}
-
 type RawCrianca = Record<string, unknown>;
 
 const snakeToCamelMap: Record<string, string> = {
@@ -57,17 +51,13 @@ function adaptCriancaResponse(raw: unknown): RawCrianca {
 }
 
 export async function listarCriancas(): Promise<RawCrianca[]> {
-  const response = await api.get<unknown[]>(endpoints.children, {
-    params: tutorParams(),
-  });
+  const response = await api.get<unknown[]>(endpoints.children);
   return asArray(response.data).map((item) => adaptCriancaResponse(item));
 }
 
 export async function buscarCriancaPorId(id: string): Promise<RawCrianca | undefined> {
   try {
-    const response = await api.get<unknown>(`${endpoints.children}/${id}`, {
-      params: tutorParams(),
-    });
+    const response = await api.get<unknown>(`${endpoints.children}/${id}`);
     return adaptCriancaResponse(response.data);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -78,11 +68,7 @@ export async function buscarCriancaPorId(id: string): Promise<RawCrianca | undef
 }
 
 export async function criarCrianca(payload: CriancaCreateInput): Promise<RawCrianca> {
-  const tutor = payload.tutorId ?? DEFAULT_TUTOR_ID;
-  const requestBody = {
-    ...payload,
-    tutor_id: tutor,
-  } as Record<string, unknown>;
+  const requestBody = { ...payload } as Record<string, unknown>;
   delete requestBody.tutorId;
 
   const response = await api.post<unknown>(endpoints.children, requestBody);
@@ -90,11 +76,7 @@ export async function criarCrianca(payload: CriancaCreateInput): Promise<RawCria
 }
 
 export async function atualizarCrianca(id: string, payload: CriancaCreateInput): Promise<RawCrianca> {
-  const tutor = payload.tutorId ?? DEFAULT_TUTOR_ID;
-  const requestBody = {
-    ...payload,
-    tutor_id: tutor,
-  } as Record<string, unknown>;
+  const requestBody = { ...payload } as Record<string, unknown>;
   delete requestBody.tutorId;
 
   const response = await api.put<unknown>(`${endpoints.children}/${id}`, requestBody);
@@ -102,9 +84,7 @@ export async function atualizarCrianca(id: string, payload: CriancaCreateInput):
 }
 
 export async function removerCrianca(id: string): Promise<void> {
-  await api.delete(`${endpoints.children}/${id}`, {
-    params: tutorParams(),
-  });
+  await api.delete(`${endpoints.children}/${id}`);
 }
 
 export type { RawCrianca };

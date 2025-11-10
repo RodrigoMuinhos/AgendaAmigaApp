@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { query } from "../../infra/database";
 import { asyncHandler } from "../utils/asyncHandler";
+import { authenticate, type AuthenticatedRequest } from "../middlewares/authenticate";
 
 const DEFAULT_TUTOR_ID = process.env.DEFAULT_TUTOR_ID?.trim() || "demo-tutor";
 
@@ -18,21 +19,13 @@ const neurodivergenciaSchema = z.object({
     .transform((value) => (value && value.length ? value : undefined)),
 });
 
-const responsavelSchema = z.object({
-  nome: z.string().trim().min(1).max(160),
-  parentesco: z
-    .string()
-    .trim()
-    .max(120)
-    .optional()
-    .transform((value) => (value && value.length ? value : undefined)),
-  telefone: z
-    .string()
-    .trim()
-    .max(40)
-    .optional()
-    .transform((value) => (value && value.length ? value : undefined)),
-});
+const responsavelSchema = z
+  .object({
+    nome: z.string().trim().max(160).optional(),
+    parentesco: z.string().trim().max(120).optional(),
+    telefone: z.string().trim().max(40).optional(),
+  })
+  .optional();
 
 const genericObjectSchema = z
   .record(z.string(), z.any())
@@ -135,10 +128,17 @@ const requestSchema = criancaSchema.extend({
 
 type CriancaInput = z.infer<typeof criancaSchema>;
 
-type CriancaRegistro = CriancaInput & {
+type ResponsavelRegistro = {
+  nome?: string;
+  parentesco?: string;
+  telefone?: string;
+};
+
+type CriancaRegistro = Omit<CriancaInput, "responsavel"> & {
   id: string;
   criadoEmISO: string;
   atualizadoEmISO: string;
+  responsavel?: ResponsavelRegistro;
   nascimento?: Record<string, unknown>;
   triagensNeonatais?: Record<string, unknown>;
   vacinasNascimento?: Record<string, unknown>;
@@ -157,15 +157,20 @@ type CriancaRow = {
 };
 
 const criancasRouter = Router();
+criancasRouter.use(authenticate);
 
 function resolveTutorId(req: Request, fallback?: string) {
-  const header = req.header("x-tutor-id")?.trim();
-  const queryId = typeof req.query.tutorId === "string" ? req.query.tutorId.trim() : undefined;
-  return header || queryId || fallback || DEFAULT_TUTOR_ID;
+  const authReq = req as AuthenticatedRequest;
+  const authenticatedId = authReq.user?.id;
+  if (authenticatedId) {
+    return authenticatedId;
+  }
+  return fallback || DEFAULT_TUTOR_ID;
 }
 
 function buildRegistro(id: string, input: CriancaInput, timestamps?: { criadoEmISO?: string; atualizadoEmISO?: string }): CriancaRegistro {
   const agora = new Date().toISOString();
+  const responsavel = normalizeResponsavel(input.responsavel);
   const nascimento = normalizeObject(input.nascimento as Record<string, unknown> | undefined);
   const triagensNeonatais = normalizeObject(
     input.triagensNeonatais as Record<string, unknown> | undefined
@@ -183,11 +188,7 @@ function buildRegistro(id: string, input: CriancaInput, timestamps?: { criadoEmI
     nome: input.nome.trim(),
     nascimentoISO: input.nascimentoISO,
     sexo: input.sexo === "M" || input.sexo === "F" || input.sexo === "O" ? input.sexo : "O",
-    responsavel: {
-      nome: input.responsavel.nome.trim(),
-      parentesco: input.responsavel.parentesco,
-      telefone: input.responsavel.telefone,
-    },
+    ...(responsavel ? { responsavel } : {}),
     cartaoSUS: input.cartaoSUS,
     cpf: input.cpf,
     convenioOperadora: input.convenioOperadora,
@@ -196,12 +197,7 @@ function buildRegistro(id: string, input: CriancaInput, timestamps?: { criadoEmI
     alergias: input.alergias?.length ? input.alergias : [],
     doencasCronicas: input.doencasCronicas?.length ? input.doencasCronicas : [],
     medicacoes: input.medicacoes?.length ? input.medicacoes : [],
-    neurodivergencias: input.neurodivergencias?.length
-      ? input.neurodivergencias.map((item) => ({
-          tipo: item.tipo,
-          ...(item.grau ? { grau: item.grau } : {}),
-        }))
-      : [],
+    neurodivergencias: sanitizeNeurodivergenciasInput(input.neurodivergencias),
     pediatra: input.pediatra,
     avatarUrl: input.avatarUrl,
     ...(nascimento ? { nascimento } : {}),
@@ -216,6 +212,64 @@ function buildRegistro(id: string, input: CriancaInput, timestamps?: { criadoEmI
 
 function asOptionalString(value: unknown) {
   return typeof value === "string" && value.trim().length ? value : undefined;
+}
+
+function normalizeResponsavel(
+  value: { nome?: unknown; parentesco?: unknown; telefone?: unknown } | undefined
+): ResponsavelRegistro | undefined {
+  if (!value) return undefined;
+  const nome = asOptionalString(value.nome);
+  const parentesco = asOptionalString(value.parentesco);
+  const telefone = asOptionalString(value.telefone);
+
+  if (!nome && !parentesco && !telefone) {
+    return undefined;
+  }
+
+  return {
+    ...(nome ? { nome } : {}),
+    ...(parentesco ? { parentesco } : {}),
+    ...(telefone ? { telefone } : {}),
+  };
+}
+
+function sanitizeNeurodivergenciasInput(
+  items: CriancaInput["neurodivergencias"]
+): CriancaRegistro["neurodivergencias"] {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item) => {
+      if (!item || typeof item !== "object") return undefined;
+      const tipo = typeof item.tipo === "string" ? item.tipo : undefined;
+      if (!tipo) return undefined;
+      const grau = asOptionalString(item.grau);
+      return {
+        tipo,
+        ...(grau ? { grau } : {}),
+      };
+    })
+    .filter((item): item is CriancaRegistro["neurodivergencias"][number] => Boolean(item));
+}
+
+function normalizeNeurodivergenciasPayload(
+  value: unknown
+): CriancaRegistro["neurodivergencias"] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return undefined;
+      const registro = item as { tipo?: unknown; grau?: unknown };
+      const tipo = typeof registro.tipo === "string" ? registro.tipo : undefined;
+      if (!tipo) return undefined;
+      const grau = asOptionalString(registro.grau);
+      return {
+        tipo,
+        ...(grau ? { grau } : {}),
+      };
+    })
+    .filter((item): item is CriancaRegistro["neurodivergencias"][number] => Boolean(item));
 }
 
 function hasRelevantValue(value: unknown): boolean {
@@ -279,24 +333,13 @@ function completarRegistro(row: CriancaRow): CriancaRegistro {
   const medicacoes = Array.isArray(payload.medicacoes)
     ? payload.medicacoes.filter((item) => typeof item === "string" && item.trim().length)
     : [];
-  const neurodivergencias = Array.isArray(payload.neurodivergencias)
-    ? payload.neurodivergencias
-        .filter(
-          (item): item is CriancaRegistro["neurodivergencias"][number] =>
-            Boolean(item) && typeof item === "object" && typeof (item as { tipo?: unknown }).tipo === "string"
-        )
-        .map((item) => ({
-          tipo: item.tipo,
-          ...(asOptionalString(item.grau) ? { grau: asOptionalString(item.grau) } : {}),
-        }))
-    : [];
+  const neurodivergencias = normalizeNeurodivergenciasPayload(payload.neurodivergencias);
 
-  const responsavelRaw = payload.responsavel && typeof payload.responsavel === "object" ? payload.responsavel : undefined;
-  const responsavel = {
-    nome: asOptionalString(responsavelRaw?.nome) ?? "",
-    parentesco: asOptionalString(responsavelRaw?.parentesco),
-    telefone: asOptionalString(responsavelRaw?.telefone),
-  } satisfies CriancaRegistro["responsavel"];
+  const responsavelRaw =
+    payload.responsavel && typeof payload.responsavel === "object"
+      ? (payload.responsavel as { nome?: unknown; parentesco?: unknown; telefone?: unknown })
+      : undefined;
+  const responsavel = normalizeResponsavel(responsavelRaw);
 
   const nascimento =
     payload.nascimento && typeof payload.nascimento === "object"
@@ -335,7 +378,7 @@ function completarRegistro(row: CriancaRow): CriancaRegistro {
       payload.sexo === "M" || payload.sexo === "F" || payload.sexo === "O"
         ? payload.sexo
         : "O",
-    responsavel,
+    ...(responsavel ? { responsavel } : {}),
     cartaoSUS: asOptionalString(payload.cartaoSUS),
     cpf: asOptionalString(payload.cpf),
     convenioOperadora: asOptionalString(payload.convenioOperadora),

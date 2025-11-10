@@ -76,11 +76,6 @@ export function CadernetaPage() {
             <p className="text-sm text-[rgba(var(--color-text),0.7)]">Idade aproximada: {idade}</p>
             <p className="text-xs text-[rgba(var(--color-text),0.6)]">Cartao SUS: {crianca.cartaoSUS ?? 'Nao informado'}</p>
           </div>
-          <div className="flex flex-col items-start gap-1 text-sm text-[rgba(var(--color-text),0.7)]">
-            <span className="font-semibold text-[rgb(var(--color-primary))]">Responsavel</span>
-            <span>{crianca.responsavel?.nome ?? 'Nao informado'}</span>
-            {crianca.responsavel?.telefone ? <span>{crianca.responsavel.telefone}</span> : null}
-          </div>
         </div>
       </div>
 
@@ -88,4 +83,3 @@ export function CadernetaPage() {
     </div>
   );
 }
-

@@ -1,19 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { EmptyState } from '../../../components/ui/EmptyState';
-import { FormCrianca } from '../components/FormCrianca';
+import { FormCrianca, FORM_CRIANCA_SECTIONS, getFormCriancaSection, type StepKey } from '../components/FormCrianca';
 import { useCriancasStore } from '../store';
 import type { CriancaCreateInput } from '../types';
 
 export function EditarCriancaPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const navigateTimeout = useRef<number | undefined>(undefined);
   const [notFound, setNotFound] = useState(false);
+
+  const sectionParam = (searchParams.get('section') ?? 'dadosBasicos') as string;
+  const section: StepKey = FORM_CRIANCA_SECTIONS.includes(sectionParam as StepKey)
+    ? (sectionParam as StepKey)
+    : 'dadosBasicos';
+  const sectionMeta = getFormCriancaSection(section);
+  const isBasicSection = section === 'dadosBasicos';
+  const pageHeading = isBasicSection ? 'Editar crianca' : `Atualizar ${sectionMeta.title.toLowerCase()}`;
+  const pageDescription = isBasicSection
+    ? 'Atualize os dados quando houver mudancas importantes.'
+    : sectionMeta.description;
 
   const { crianca, atualizar, buscarPorId, remover, carregando, erro, limparErro } = useCriancasStore((state) => ({
     crianca: id ? state.criancas.find((item) => item.id === id) : undefined,
@@ -155,12 +167,8 @@ export function EditarCriancaPage() {
         >
           Voltar
         </Button>
-        <h1 className="text-3xl font-semibold text-[rgb(var(--color-text))]">
-          Editar crianca
-        </h1>
-        <p className="text-sm text-[rgba(var(--color-text),0.7)]">
-          Atualize os dados quando houver mudancas importantes.
-        </p>
+        <h1 className="text-3xl font-semibold text-[rgb(var(--color-text))]">{pageHeading}</h1>
+        <p className="text-sm text-[rgba(var(--color-text),0.7)]">{pageDescription}</p>
       </div>
 
       <Card className="rounded-3xl bg-[rgb(var(--color-surface))] p-6 shadow-elevated">
@@ -170,11 +178,12 @@ export function EditarCriancaPage() {
           onSubmit={handleSubmit}
           onCancel={() => navigate(`/criancas/${id}`)}
           isSubmitting={atualizarCrianca.isPending || carregando}
-          submitLabel="Salvar alteracoes"
+          submitLabel={section === 'dadosBasicos' ? 'Salvar alteracoes' : 'Salvar'}
           onDelete={handleDelete}
           deleteLabel="Excluir dados"
           status={status}
           statusMessage={statusMessage}
+          section={section}
         />
       </Card>
     </div>

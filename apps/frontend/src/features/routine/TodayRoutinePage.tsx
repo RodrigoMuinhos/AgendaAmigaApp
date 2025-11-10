@@ -30,12 +30,8 @@ export function TodayRoutinePage() {
   );
 
   useEffect(() => {
-    setCompleted((prev) => {
-      const stillVisible = prev.filter((id) => routine.some((item) => item.id === id));
-      const merged = new Set([...stillVisible, ...defaults]);
-      return Array.from(merged);
-    });
-  }, [defaults, routine]);
+    setCompleted(defaults);
+  }, [defaults]);
 
   const toggleItem = (id: string) => {
     setCompleted((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
@@ -156,4 +152,3 @@ function RoutineCard({ item, done, onToggle }: RoutineCardProps) {
     </Card>
   );
 }
-

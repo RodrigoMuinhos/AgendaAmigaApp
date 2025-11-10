@@ -1,4 +1,7 @@
 export const endpoints = {
+  authLogin: '/auth/login',
+  authRegister: '/auth/register',
+  authMe: '/auth/me',
   families: '/familias',
   patients: '/pacientes',
   children: '/criancas',

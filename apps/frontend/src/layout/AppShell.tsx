@@ -1,11 +1,34 @@
-import { Outlet } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { NavRail } from './NavRail';
+import { useAuthStore } from '../features/auth/store';
 
 export function AppShell() {
   const { t } = useTranslation();
+  const status = useAuthStore((state) => state.status);
+  const initialize = useAuthStore((state) => state.initialize);
+
+  useEffect(() => {
+    if (status === 'idle') {
+      void initialize();
+    }
+  }, [initialize, status]);
+
+  if (status === 'idle' || status === 'loading') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[rgb(var(--color-bg))] text-[rgb(var(--color-text))]">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-[rgb(var(--color-primary))] border-b-transparent" />
+        <p className="mt-4 text-sm text-[rgba(var(--color-text),0.7)]">{t('app.loading', 'Carregando sua agenda...')}</p>
+      </div>
+    );
+  }
+
+  if (status === 'unauthenticated') {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[rgb(var(--color-bg))] via-[rgba(var(--color-primary),0.05)] to-[rgb(var(--color-bg))] text-[rgb(var(--color-text))] transition-colors">

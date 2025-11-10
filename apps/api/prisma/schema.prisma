@@ -41,9 +41,23 @@ model criancas {
   criado_em          DateTime             @default(now()) @db.Timestamptz(6)
   atualizado_em      DateTime             @updatedAt @db.Timestamptz(6)
   relatorios_diarios relatorios_diarios[]
+  tutor              usuarios             @relation(fields: [tutor_id], references: [id], onDelete: Cascade)
 
   @@index([tutor_id, criado_em], map: "idx_criancas_tutor")
   @@map("criancas")
+}
+
+model usuarios {
+  id                       String    @id
+  nome                     String
+  email                    String    @unique
+  senha_hash               String
+  responsavel_nome         String\n  responsavel_parentesco   String?\n  responsavel_telefone     String?\n  responsavel_cpf          String?
+  criado_em                DateTime  @default(now()) @db.Timestamptz(6)
+  atualizado_em            DateTime  @updatedAt @db.Timestamptz(6)
+  criancas                 criancas[]
+
+  @@map("usuarios")
 }
 
 model profissionais {
@@ -441,3 +455,4 @@ enum MealPeriod {
   AFTERNOON
   DINNER
 }
+

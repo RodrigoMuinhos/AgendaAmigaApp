@@ -12,7 +12,7 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const baseStyles =
-  'inline-flex items-center justify-center gap-2 rounded-full font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(30,136,229,0.35)] disabled:pointer-events-none disabled:opacity-60 data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-60';
+  'inline-flex shrink-0 items-center justify-center gap-2 rounded-full font-semibold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(30,136,229,0.35)] disabled:pointer-events-none disabled:opacity-60 data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-60';
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
@@ -20,7 +20,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   ghost:
     'border border-[rgba(var(--color-border),0.6)] bg-transparent text-[rgb(var(--color-text))] hover:border-[rgb(var(--color-primary))] hover:text-[rgb(var(--color-primary))]',
   secondary:
-    'bg-[rgba(var(--color-primary),0.1)] text-[rgb(var(--color-primary))] border border-[rgba(var(--color-primary),0.2)] hover:bg-[rgba(var(--color-primary),0.18)]',
+    'bg-transparent text-[rgb(var(--color-primary))] border border-[rgba(var(--color-primary),0.4)] hover:bg-[rgba(var(--color-primary),0.1)]',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -68,7 +68,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
           aria-hidden
         />
       ) : null}
-      {children}
+      {children !== undefined && children !== null ? (
+        <span className="inline-flex items-center gap-2 whitespace-nowrap leading-none">
+          {children}
+        </span>
+      ) : null}
     </button>
   );
 });

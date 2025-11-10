@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import dayjs from 'dayjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
+import { useAuthStore } from '../auth/store';
 
 type DailyCareEntry = {
   id: string;
@@ -52,9 +53,64 @@ const mealByValue = mealOptions.reduce<Record<DailyCareEntry['meals'], MealOptio
 }, {} as Record<DailyCareEntry['meals'], MealOption>);
 
 const initialEntries: DailyCareEntry[] = [];
+const STORAGE_KEY_PREFIX = 'agenda-amiga:daily-care-entries';
+
+const MOOD_SCALE: Record<DailyCareEntry['mood'], number> = {
+  sereno: 3,
+  ativo: 2,
+  sensivel: 1,
+  cansado: 0,
+};
+
+const HYDRATION_SCALE: Record<DailyCareEntry['hydration'], number> = {
+  adequada: 2,
+  monitorar: 1,
+  reforcar: 0,
+};
+
+const MEAL_SCALE: Record<DailyCareEntry['meals'], number> = {
+  completo: 2,
+  moderado: 1,
+  baixo: 0,
+};
+
+function sanitizeEntries(raw: unknown): DailyCareEntry[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((item) => {
+      if (!item || typeof item !== 'object') return undefined;
+      const value = item as Partial<DailyCareEntry>;
+      if (
+        typeof value.id !== 'string' ||
+        typeof value.dateISO !== 'string' ||
+        typeof value.mood !== 'string' ||
+        typeof value.hydration !== 'string' ||
+        typeof value.meals !== 'string' ||
+        typeof value.createdAt !== 'string'
+      ) {
+        return undefined;
+      }
+      return {
+        id: value.id,
+        dateISO: value.dateISO,
+        mood: value.mood as DailyCareEntry['mood'],
+        hydration: value.hydration as DailyCareEntry['hydration'],
+        meals: value.meals as DailyCareEntry['meals'],
+        notes: typeof value.notes === 'string' ? value.notes : '',
+        createdAt: value.createdAt,
+      };
+    })
+    .filter((entry): entry is DailyCareEntry => Boolean(entry));
+}
 
 export function DailyCareReportPage() {
   const today = dayjs().format('YYYY-MM-DD');
+
+  const userId = useAuthStore((state) => state.user?.id);
+  const storageKey = useMemo(
+    () => `${STORAGE_KEY_PREFIX}:${userId && userId.trim().length ? userId : 'anon'}`,
+    [userId],
+  );
 
   const [entries, setEntries] = useState<DailyCareEntry[]>(initialEntries);
   const [entryDate, setEntryDate] = useState<string>(today);
@@ -63,6 +119,35 @@ export function DailyCareReportPage() {
   const [meals, setMeals] = useState<DailyCareEntry['meals'] | ''>('');
   const [notes, setNotes] = useState<string>('');
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [hydrationGoal, setHydrationGoal] = useState<'adequada' | 'monitorar' | 'reforcar'>('adequada');
+  const [hydratedKey, setHydratedKey] = useState<string>(storageKey);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+      const sanitized = sanitizeEntries(parsed);
+      setEntries(sanitized);
+      const latest = sanitized[0];
+      setHydrationGoal(latest ? latest.hydration : 'adequada');
+    } catch {
+      setEntries([]);
+      setHydrationGoal('adequada');
+    } finally {
+      setHydratedKey(storageKey);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (hydratedKey !== storageKey) return;
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(entries));
+    } catch {
+      // storage unavailable, ignore
+    }
+  }, [entries, storageKey, hydratedKey]);
 
   const sortedEntries = useMemo(
     () =>
@@ -100,6 +185,35 @@ export function DailyCareReportPage() {
   const firstTodayEntry = todayEntries[0];
   const todayHydrationInfo = firstTodayEntry ? hydrationByValue[firstTodayEntry.hydration] : undefined;
   const todayMealInfo = firstTodayEntry ? mealByValue[firstTodayEntry.meals] : undefined;
+  const hydrationGoalLabel = hydrationByValue[hydrationGoal]?.label ?? 'Hidratacao em dia';
+  const recentWindow = useMemo(() => sortedEntries.slice(0, 7).reverse(), [sortedEntries]);
+  const moodTrend = useMemo(
+    () =>
+      recentWindow.map((entry) => ({
+        label: dayjs(entry.dateISO).format('DD/MM'),
+        value: MOOD_SCALE[entry.mood],
+        description: moodByValue[entry.mood].label,
+      })),
+    [recentWindow],
+  );
+  const hydrationTrend = useMemo(
+    () =>
+      recentWindow.map((entry) => ({
+        label: dayjs(entry.dateISO).format('DD/MM'),
+        value: HYDRATION_SCALE[entry.hydration],
+        description: hydrationByValue[entry.hydration].label,
+      })),
+    [recentWindow],
+  );
+  const mealTrend = useMemo(
+    () =>
+      recentWindow.map((entry) => ({
+        label: dayjs(entry.dateISO).format('DD/MM'),
+        value: MEAL_SCALE[entry.meals],
+        description: mealByValue[entry.meals].label,
+      })),
+    [recentWindow],
+  );
 
   const canSubmit = Boolean(entryDate && mood && hydration && meals);
 
@@ -120,6 +234,7 @@ export function DailyCareReportPage() {
     };
 
     setEntries((current) => [newEntry, ...current]);
+    setHydrationGoal(newEntry.hydration);
     setMood('');
     setHydration('');
     setMeals('');
@@ -177,34 +292,60 @@ export function DailyCareReportPage() {
               {todayEntries.length} registro{todayEntries.length === 1 ? '' : 's'} hoje
             </span>
           </CardHeader>
-          <CardContent className="grid gap-3 sm:grid-cols-2">
-            <SummaryItem
-              title="Registros de hoje"
-              value={todayEntries.length ? `${todayEntries.length}` : '--'}
-              subtitle={
-                todayEntries.length
-                  ? `${todayEntries.length} anotacao${todayEntries.length > 1 ? 'es' : ''} sincronizada${todayEntries.length > 1 ? 's' : ''}.`
-                  : 'Marque o primeiro registro para iniciar o acompanhamento.'
-              }
-            />
-            <SummaryItem
-              title="Humor predominante"
-              value={lastMoodInfo?.label ?? '--'}
-              subtitle={lastMoodInfo?.summary ?? 'Aguarde o primeiro registro para avaliar o humor do dia.'}
-            />
-            <SummaryItem
-              title="Hidratacao"
-              value={todayHydrationInfo?.label ?? '--'}
-              subtitle={todayHydrationInfo?.summary ?? 'Assim que registrar, mostramos o status combinado.'}
-            />
-            <SummaryItem
-              title="Alimentacao"
-              value={todayMealInfo?.label ?? '--'}
-              subtitle={todayMealInfo?.summary ?? 'Registre uma refeicao para acompanhar o apetite.'}
-            />
-          </CardContent>
-        </Card>
-      </section>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <SummaryItem
+                  title="Registros de hoje"
+                  value={todayEntries.length ? `${todayEntries.length}` : '--'}
+                  subtitle={
+                    todayEntries.length
+                      ? `${todayEntries.length} anotacao${todayEntries.length > 1 ? 'es' : ''} sincronizada${todayEntries.length > 1 ? 's' : ''}.`
+                      : 'Marque o primeiro registro para iniciar o acompanhamento.'
+                  }
+                />
+                <SummaryItem
+                  title="Humor predominante"
+                  value={lastMoodInfo?.label ?? '--'}
+                  subtitle={lastMoodInfo?.summary ?? 'Aguarde o primeiro registro para avaliar o humor do dia.'}
+                />
+                <SummaryItem
+                  title="Hidratacao"
+                  value={todayHydrationInfo?.label ?? '--'}
+                  subtitle={todayHydrationInfo?.summary ?? 'Assim que registrar, mostramos o status combinado.'}
+                />
+                <SummaryItem
+                  title="Alimentacao"
+                  value={todayMealInfo?.label ?? '--'}
+                  subtitle={todayMealInfo?.summary ?? 'Registre uma refeicao para acompanhar o apetite.'}
+                />
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-3">
+                <TrendCard
+                  title="Humor nos ultimos dias"
+                  current={lastMoodInfo?.label ?? 'Aguardando registros'}
+                  trend={moodTrend}
+                  scaleMax={3}
+                  emptyMessage="Registre pelo menos um humor para iniciar o grafico."
+                />
+                <TrendCard
+                  title="Hidratacao monitorada"
+                  current={`${todayHydrationInfo?.label ?? 'Aguardando registros'} - Meta: ${hydrationGoalLabel}`}
+                  trend={hydrationTrend}
+                  scaleMax={2}
+                  emptyMessage="Registre a ingestao de liquidos para visualizar a curva."
+                />
+                <TrendCard
+                  title="Apetite observado"
+                  current={todayMealInfo?.label ?? 'Aguardando registros'}
+                  trend={mealTrend}
+                  scaleMax={2}
+                  emptyMessage="Informe as refeicoes para acompanhar a tendencia."
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </section>
 
       <section className="rounded-3xl border border-dashed border-[rgba(var(--color-border),0.35)] bg-[rgba(var(--color-surface),0.95)] p-6 shadow-soft lg:p-8">
         <header className="space-y-2">
@@ -342,7 +483,7 @@ export function DailyCareReportPage() {
                 className="flex items-center gap-3 rounded-2xl border border-[rgba(var(--color-success),0.4)] bg-[rgba(var(--color-success),0.12)] px-4 py-3 text-sm text-[rgb(var(--color-success))]"
               >
                 <span aria-hidden className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[rgba(var(--color-success),0.5)]">
-                  ✓
+                OK
                 </span>
                 <span>{feedback}</span>
               </div>
@@ -465,6 +606,113 @@ function SummaryItem({ title, value, subtitle }: SummaryItemProps) {
   );
 }
 
+type TrendPoint = {
+  label: string;
+  value: number;
+  description: string;
+};
+
+type TrendCardProps = {
+  title: string;
+  current: string;
+  trend: TrendPoint[];
+  scaleMax: number;
+  emptyMessage: string;
+};
+
+function TrendCard({ title, current, trend, scaleMax, emptyMessage }: TrendCardProps) {
+  const hasData = trend.length > 0;
+  const recentBadges = hasData ? trend.slice(-4) : [];
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-[rgba(var(--color-border),0.45)] bg-[rgba(var(--color-surface),0.95)] p-4">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-[rgba(var(--color-text),0.55)]">{title}</p>
+        <p className="text-sm text-[rgba(var(--color-text),0.7)]">{current}</p>
+      </div>
+      <div className="h-24">
+        {hasData ? (
+          <TrendSparkline points={trend} scaleMax={scaleMax} />
+        ) : (
+          <p className="text-xs text-[rgba(var(--color-text),0.55)]">{emptyMessage}</p>
+        )}
+      </div>
+      {hasData ? (
+        <div className="flex flex-wrap gap-2 text-xs text-[rgba(var(--color-text),0.6)]">
+          {recentBadges.map((item, index) => (
+            <span key={`${item.label}-${item.description}-${index}`} className="rounded-full border border-[rgba(var(--color-border),0.4)] px-2 py-1">
+              <span className="font-semibold text-[rgb(var(--color-text))]">{item.label}</span> <span>{item.description}</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+type TrendSparklineProps = {
+  points: TrendPoint[];
+  scaleMax: number;
+};
+
+function TrendSparkline({ points, scaleMax }: TrendSparklineProps) {
+  if (!points.length) {
+    return null;
+  }
+
+  const width = 220;
+  const height = 80;
+  const step = points.length > 1 ? width / (points.length - 1) : width;
+  const gradientId = `trend-gradient-${points
+    .map((point) => point.label.replace(/[^a-zA-Z0-9]/g, ''))
+    .join('') || 'default'}`;
+
+  const coordinates = points.map((point, index) => {
+    const x = index * step;
+    const clampedValue = Math.min(Math.max(point.value, 0), scaleMax);
+    const y = height - (clampedValue / scaleMax) * height;
+    return `${x},${y}`;
+  });
+  const lastX = points.length > 1 ? (points.length - 1) * step : 0;
+
+  return (
+    <svg role="img" aria-label="Historico dos registros" width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+      <defs>
+        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="rgba(var(--color-primary),0.55)" />
+          <stop offset="100%" stopColor="rgba(var(--color-primary),0.05)" />
+        </linearGradient>
+      </defs>
+      <polyline
+        fill="none"
+        stroke={`rgb(var(--color-primary))`}
+        strokeWidth={2.5}
+        points={coordinates.join(' ')}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {points.map((point, index) => {
+        const x = index * step;
+        const clampedValue = Math.min(Math.max(point.value, 0), scaleMax);
+        const y = height - (clampedValue / scaleMax) * height;
+        return (
+          <g key={`${point.label}-${index}`}>
+            <circle cx={x} cy={y} r={4} fill={`rgb(var(--color-primary))`} />
+            <text x={x} y={height + 14} textAnchor="middle" fontSize={10} fill="rgba(var(--color-text),0.6)">
+              {point.label}
+            </text>
+          </g>
+        );
+      })}
+      <polyline
+        fill={`url(#${gradientId})`}
+        stroke="none"
+        points={`0,${height} ${coordinates.join(' ')} ${lastX},${height}`}
+        opacity={0.35}
+      />
+    </svg>
+  );
+}
+
 type ChecklistRowProps = {
   active: boolean;
   label: string;
@@ -496,3 +744,4 @@ function weekDayLabel(dateISO: string) {
   const labels = ['Domingo', 'Segunda-feira', 'Terca-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sabado'];
   return labels[dayjs(dateISO).day()] ?? '';
 }
+

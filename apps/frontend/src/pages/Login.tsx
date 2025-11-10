@@ -1,66 +1,123 @@
-import { FormEvent, useMemo, useState } from 'react';
+﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, KeyRound, LogIn, Mail, ShieldCheck, User, UserPlus } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight, LogIn, User, UserPlus } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { cn } from '../utils/cn';
-import { env } from '../core/config/env';
+import { useAuthStore } from '../features/auth/store';
 
 type Mode = 'login' | 'register';
 
 export function LoginPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('login');
   const [searchParams] = useSearchParams();
+  const [formError, setFormError] = useState<string | undefined>(undefined);
+  const [cpfInput, setCpfInput] = useState('');
+
+  const status = useAuthStore((state) => state.status);
+  const initialize = useAuthStore((state) => state.initialize);
+  const authenticating = useAuthStore((state) => state.authenticating);
+  const login = useAuthStore((state) => state.login);
+  const registerAccount = useAuthStore((state) => state.register);
+  const storeError = useAuthStore((state) => state.error);
+  const clearAuthError = useAuthStore((state) => state.clearError);
 
   const isLogin = mode === 'login';
   const oauthError = searchParams.get('error');
   const oauthProvider = searchParams.get('provider');
 
-  const socialUrls = useMemo(() => {
-    const normalize = (value: string, fallbackPath: string) => {
-      if (value) {
-        return value;
+  useEffect(() => {
+    if (status === 'idle') {
+      void initialize();
+    }
+  }, [initialize, status]);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      navigate('/inicio', { replace: true });
+    }
+  }, [navigate, status]);
+
+  useEffect(() => {
+    setCpfInput('');
+  }, [mode]);
+
+  useEffect(() => {
+    if (storeError) {
+      setFormError(storeError);
+    }
+  }, [storeError]);
+
+  useEffect(() => {
+    setFormError(undefined);
+    clearAuthError();
+  }, [mode, clearAuthError]);
+
+  const formatCpf = useMemo(
+    () => (value: string) => {
+      const digits = value.replace(/\D/g, '').slice(0, 11);
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+      if (digits.length <= 9) {
+        return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
       }
+      return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+    },
+    [],
+  );
 
-      const base = env.apiHttpBase || '';
-      const sanitizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
-      return `${sanitizedBase}${fallbackPath}`;
-    };
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError(undefined);
 
-    return {
-      google: normalize(env.googleAuthUrl, '/api/auth/google'),
-      govbr: normalize(env.govBrAuthUrl, '/api/auth/govbr'),
-    };
-  }, []);
+    const data = new FormData(event.currentTarget);
+    const nome = String(data.get('name') ?? '').trim();
+    const senha = String(data.get('password') ?? '');
+    const cpfRaw = String(data.get('cpf') ?? '').trim();
+    const cpfDigits = cpfRaw.replace(/\D/g, '');
 
-  const startSocialLogin = (provider: 'google' | 'govbr') => {
-    const target = socialUrls[provider];
+    if (!cpfDigits || !senha) {
+      setFormError(t('login.validation.missingCredentials', 'Informe CPF e senha.'));
+      return;
+    }
 
-    if (!target) {
-      // eslint-disable-next-line no-alert
-      alert(
-        t(
-          'login.socialUnavailable',
-          'Configuração de login social ausente. Contate o suporte.',
-        ),
+    if (cpfDigits.length !== 11) {
+      setFormError(t('login.validation.responsavelCpf', 'Informe um CPF valido.'));
+      return;
+    }
+
+    if (isLogin) {
+      const success = await login({ cpf: cpfDigits, senha });
+      if (success) {
+        navigate('/inicio', { replace: true });
+      }
+      return;
+    }
+
+    if (!nome.length) {
+      setFormError(t('login.validation.fullName', 'Informe seu nome completo.'));
+      return;
+    }
+
+    if (senha.length < 6) {
+      setFormError(
+        t('login.validation.passwordLength', 'A senha precisa ter pelo menos 6 caracteres.'),
       );
       return;
     }
 
-    const resolvedTarget = new URL(target, window.location.origin);
-    const callback = `${window.location.origin}/login-success?provider=${provider}`;
-    resolvedTarget.searchParams.set('return_to', callback);
+    const success = await registerAccount({
+      nome,
+      senha,
+      cpf: cpfDigits,
+    });
 
-    window.location.assign(resolvedTarget.toString());
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    // TODO: Integrate with real auth flow
-    // eslint-disable-next-line no-console
-    console.info(`[auth] ${mode} flow submitted`);
+    if (success) {
+      navigate('/inicio', { replace: true });
+    }
   };
 
   return (
@@ -71,18 +128,29 @@ export function LoginPage() {
             {t('login.brand', 'AGENDA AMIGA')}
           </h1>
           <p className="mt-2 text-sm text-[rgba(var(--color-text),0.7)]">
-            {t('login.subtitle', 'Cuidados em família com um só login.')}
+            {t('login.subtitle', 'Cuidados em familia com um so login.')}
           </p>
         </div>
 
         <div className="rounded-[32px] border border-[rgba(var(--color-border),0.3)] bg-[rgb(var(--color-surface))] p-8 shadow-elevated backdrop-blur-sm">
           {oauthError ? (
-            <div className="mb-6 rounded-3xl border border-[rgba(var(--color-border),0.35)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm text-[rgb(220,38,38)]">
-              {t('login.oauthError', 'Não foi possível iniciar o login com {{provider}}. Verifique a configuração e tente novamente.', {
-                provider: oauthProvider ?? 'o provedor',
-              })}
+            <div className="mb-4 rounded-3xl border border-[rgba(var(--color-border),0.35)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm text-[rgb(220,38,38)]">
+              {t(
+                'login.oauthError',
+                'Nao foi possivel iniciar o login com {{provider}}. Verifique a configuracao e tente novamente.',
+                {
+                  provider: oauthProvider ?? 'o provedor',
+                }
+              )}
             </div>
           ) : null}
+
+          {formError ? (
+            <div className="mb-4 rounded-3xl border border-[rgba(var(--color-border),0.35)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm text-[rgb(220,38,38)]">
+              {formError}
+            </div>
+          ) : null}
+
           <div className="mb-6 grid grid-cols-2 gap-2 rounded-[24px] border border-[rgba(var(--color-border),0.25)] bg-[rgba(var(--color-surface),0.9)] p-1">
             <button
               type="button"
@@ -90,7 +158,7 @@ export function LoginPage() {
                 'flex flex-col items-center gap-1 rounded-[18px] px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition',
                 isLogin
                   ? 'bg-[rgb(var(--color-primary))] text-white shadow-soft'
-                  : 'text-[rgba(var(--color-text),0.6)] hover:bg-[rgba(var(--color-primary),0.08)]',
+                  : 'text-[rgba(var(--color-text),0.6)] hover:bg-[rgba(var(--color-primary),0.08)]'
               )}
               onClick={() => setMode('login')}
             >
@@ -103,7 +171,7 @@ export function LoginPage() {
                 'flex flex-col items-center gap-1 rounded-[18px] px-4 py-3 text-sm font-semibold uppercase tracking-[0.2em] transition',
                 !isLogin
                   ? 'bg-[rgb(var(--color-primary))] text-white shadow-soft'
-                  : 'text-[rgba(var(--color-text),0.6)] hover:bg-[rgba(var(--color-primary),0.08)]',
+                  : 'text-[rgba(var(--color-text),0.6)] hover:bg-[rgba(var(--color-primary),0.08)]'
               )}
               onClick={() => setMode('register')}
             >
@@ -121,21 +189,28 @@ export function LoginPage() {
                 <Input
                   type="text"
                   name="name"
-                  placeholder={t('login.fullNamePlaceholder', 'Como devemos chamar você?')}
+                  placeholder={t('login.fullNamePlaceholder', 'Como devemos chamar voce?')}
                   required
+                  disabled={authenticating}
+                  autoComplete="name"
                 />
               </div>
             ) : null}
 
             <div>
               <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.15em] text-[rgba(var(--color-text),0.7)]">
-                {t('login.email', 'E-mail')}
+                {t('login.cpf', 'CPF')}
               </label>
               <Input
-                type="email"
-                name="email"
-                placeholder={t('login.emailPlaceholder', 'nome@exemplo.com')}
+                type="text"
+                name="cpf"
+                value={cpfInput}
+                onChange={(event) => setCpfInput(formatCpf(event.target.value))}
+                placeholder={t('login.cpfPlaceholder', '000.000.000-00')}
                 required
+                disabled={authenticating}
+                inputMode="numeric"
+                autoComplete={isLogin ? 'username' : 'off'}
               />
             </div>
 
@@ -147,25 +222,12 @@ export function LoginPage() {
                 type="password"
                 name="password"
                 placeholder={t('login.passwordPlaceholder', 'Digite sua senha')}
-                minLength={6}
+                minLength={isLogin ? undefined : 6}
                 required
+                disabled={authenticating}
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
               />
             </div>
-
-            {!isLogin ? (
-              <div>
-                <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.15em] text-[rgba(var(--color-text),0.7)]">
-                  {t('login.passwordConfirm', 'Confirme a senha')}
-                </label>
-                <Input
-                  type="password"
-                  name="passwordConfirm"
-                  placeholder={t('login.passwordConfirmPlaceholder', 'Repita a senha')}
-                  minLength={6}
-                  required
-                />
-              </div>
-            ) : null}
 
             {isLogin ? (
               <div className="flex justify-end">
@@ -178,7 +240,7 @@ export function LoginPage() {
               </div>
             ) : null}
 
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={authenticating}>
               <span className="flex items-center justify-center gap-2">
                 {isLogin ? (
                   <>
@@ -195,55 +257,12 @@ export function LoginPage() {
             </Button>
           </form>
 
-          <div className="my-6 flex items-center gap-4">
-            <span className="h-px flex-1 bg-[rgba(var(--color-border),0.4)]" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[rgba(var(--color-text),0.45)]">
-              {t('login.orContinue', 'ou continue com')}
-            </span>
-            <span className="h-px flex-1 bg-[rgba(var(--color-border),0.4)]" />
-          </div>
-
-          <div className="grid gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full border border-[rgba(var(--color-border),0.35)] bg-[rgba(var(--color-surface),0.9)] text-[rgb(var(--color-text))]"
-              onClick={() => setMode('login')}
-            >
-              <span className="flex items-center justify-center gap-3">
-                <Mail className="h-5 w-5" aria-hidden />
-                {t('login.socialEmail', 'Usar e-mail e senha')}
-              </span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full border border-[rgba(var(--color-border),0.35)] bg-[rgba(var(--color-surface),0.9)] text-[rgb(var(--color-text))]"
-              onClick={() => startSocialLogin('google')}
-            >
-              <span className="flex items-center justify-center gap-3">
-                <ShieldCheck className="h-5 w-5 text-[#4285F4]" aria-hidden />
-                {t('login.socialGoogle', 'Entrar com Google')}
-              </span>
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full border border-[rgba(var(--color-border),0.35)] bg-[rgba(var(--color-surface),0.9)] text-[rgb(var(--color-text))]"
-              onClick={() => startSocialLogin('govbr')}
-            >
-              <span className="flex items-center justify-center gap-3">
-                <KeyRound className="h-5 w-5 text-[#1E5BC6]" aria-hidden />
-                {t('login.socialGov', 'Entrar com gov.br')}
-              </span>
-            </Button>
-          </div>
         </div>
 
         <div className="mt-6 text-center text-sm text-[rgba(var(--color-text),0.7)]">
           {isLogin ? (
             <span className="inline-flex items-center gap-2">
-              {t('login.noAccount', 'Ainda não tem cadastro?')}
+              {t('login.noAccount', 'Ainda nao tem cadastro?')}
               <button
                 type="button"
                 className="inline-flex items-center gap-1 font-semibold text-[rgb(var(--color-primary))] transition hover:text-[rgba(var(--color-primary),0.8)]"
@@ -255,7 +274,7 @@ export function LoginPage() {
             </span>
           ) : (
             <span className="inline-flex items-center gap-2">
-              {t('login.haveAccount', 'Já tem uma conta?')}
+              {t('login.haveAccount', 'Ja tem uma conta?')}
               <button
                 type="button"
                 className="inline-flex items-center gap-1 font-semibold text-[rgb(var(--color-primary))] transition hover:text-[rgba(var(--color-primary),0.8)]"
@@ -274,10 +293,12 @@ export function LoginPage() {
             className="inline-flex items-center gap-2 text-sm font-semibold text-[rgba(var(--color-text),0.6)] transition hover:text-[rgb(var(--color-primary))]"
           >
             <ArrowRight className="h-4 w-4 rotate-180" aria-hidden />
-            {t('login.backHome', 'Voltar para a página inicial')}
+            {t('login.backHome', 'Voltar para a pagina inicial')}
           </Link>
         </div>
       </div>
     </div>
   );
 }
+
+

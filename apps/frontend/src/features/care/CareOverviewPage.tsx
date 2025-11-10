@@ -124,11 +124,10 @@ export function CareOverviewPage() {
                   key={section.id}
                   type="button"
                   variant={activeSection === section.id ? 'primary' : 'secondary'}
-                  className="flex flex-col items-start gap-1 rounded-2xl px-4 py-3 text-left"
+                  className="flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold"
                   onClick={() => setActiveSection(section.id)}
                 >
-                  <span className="text-sm font-semibold">{section.label}</span>
-                  <span className="text-xs font-normal text-[rgba(var(--color-text),0.7)]">{section.description}</span>
+                  {section.label}
                 </Button>
               ))}
             </div>

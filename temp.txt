@@ -1,0 +1,80 @@
+      </header>
+
+      <div className="space-y-4">
+        {lista.map((analise, index) => (
+          <RegistroResumo key={`${analise.registro.dataISO}-${index}`} analise={analise} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+type RegistroResumoProps = {
+  analise: MedidaCrescimentoAnalise;
+};
+
+function RegistroResumo({ analise }: RegistroResumoProps) {
+  const { registro, referencia, idadeMeses, peso, estatura, perimetro, imc, statusImc, score } = analise;
+  const dataFormatada = new Date(registro.dataISO).toLocaleDateString('pt-BR');
+  const idadeFormatada = formatarIdade(idadeMeses);
+
+  return (
+    <article className="rounded-2xl border border-[rgba(var(--color-border),0.25)] bg-[rgba(var(--color-surface),0.95)] p-4">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-[rgb(var(--color-text))]">{dataFormatada}</p>
+          <p className="text-xs text-[rgba(var(--color-text),0.65)]">Idade: {idadeFormatada}</p>
+        </div>
+      </div>
+      <div className="mt-3 space-y-3 text-sm">
+        <LinhaResumo
+          titulo="Peso"
+          icone={<Scale className="h-4 w-4" aria-hidden />}
+          valor={formatar(registro.pesoKg, 'kg')}
+          media={`Media esperada: ${formatar(referencia.pesoMedioKg, 'kg')}`}
+          status={formatarStatus(peso)}
+        />
+        <LinhaResumo
+          titulo="Estatura"
+          icone={<Ruler className="h-4 w-4" aria-hidden />}
+          valor={formatar(registro.estaturaCm, 'cm')}
+          media={`Media esperada: ${formatar(referencia.estaturaMediaCm, 'cm')}`}
+          status={formatarStatus(estatura)}
+        />
+        <LinhaResumo
+          titulo="Perimetro cefalico"
+          icone={<CircleDot className="h-4 w-4" aria-hidden />}
+          valor={formatar(registro.perimetroCefalicoCm, 'cm')}
+          media={`Media esperada: ${formatar(referencia.perimetroCefalicoCm, 'cm')}`}
+          status={formatarStatus(perimetro)}
+        />
+        <LinhaResumo
+          titulo="IMC"
+          icone={<Activity className="h-4 w-4" aria-hidden />}
+          valor={formatar(imc)}
+          media="Classificacao"
+          status={statusImc === 'indefinido' ? 'Nao calculado' : traduzirStatus(statusImc)}
+        />
+        <LinhaResumo
+          titulo="Score MS"
+          icone={<Trophy className="h-4 w-4" aria-hidden />}
+          valor={`${score}/100`}
+          media="Referencia Ministerio da Saude"
+          status={avaliacaoScore(score)}
+        />
+      </div>
+    </article>
+  );
+}
+
+type LinhaResumoProps = {
+  titulo: string;
+  valor: string;
+  media: string;
+  status: string;
+  icone: React.ReactNode;
+};
+
+function LinhaResumo({ titulo, valor, media, status, icone }: LinhaResumoProps) {
+  return (
+    <div className="rounded-xl bg-[rgba(var(--color-primary),0.08)] px-4 py-3">

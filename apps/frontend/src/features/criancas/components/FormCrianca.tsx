@@ -1,5 +1,5 @@
-﻿import { useMemo, useState } from 'react';
-import { Controller, FieldPath, useFieldArray, useForm } from 'react-hook-form';
+﻿import { useMemo } from 'react';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 import { Button } from '../../../components/ui/button';
 import { MaskedInput, stripMask } from '../../../components/ui/masked-input';
 import type {
@@ -27,15 +27,22 @@ type FormCriancaProps = {
   deleteLabel?: string;
   status?: 'idle' | 'success' | 'error';
   statusMessage?: string;
+  section?: StepKey;
 };
 
-type StepKey = 'dadosBasicos' | 'nascimento' | 'triagens' | 'vacinas' | 'alta' | 'acompanhamentos';
+export type StepKey =
+  | 'dadosBasicos'
+  | 'nascimento'
+  | 'triagens'
+  | 'vacinas'
+  | 'alta'
+  | 'neurodivergencias'
+  | 'acompanhamentos';
 
-type StepDefinition = {
+export type StepDefinition = {
   key: StepKey;
   title: string;
   description: string;
-  fields: FieldPath<CriancaCreateInput>[];
 };
 
 const inputClass =
@@ -104,6 +111,11 @@ const alimentacaoAtualOptions: { value: AlimentacaoAtual; label: string }[] = [
   { value: 'solidosIniciados', label: 'Solidos iniciados' },
   { value: 'dietaRegular', label: 'Dieta regular' },
   { value: 'outro', label: 'Outro' },
+];
+
+const neurodivergenciaOptions = [
+  { value: 'TEA', label: 'Transtorno do espectro autista (TEA)' },
+  { value: 'TDAH', label: 'Transtorno do deficit de atencao/hiperatividade (TDAH)' },
 ];
 
 const sanitizeNumber = (value: unknown) => {
@@ -321,39 +333,44 @@ const STEP_DEFINITIONS: StepDefinition[] = [
     key: 'dadosBasicos',
     title: 'Dados basicos',
     description: 'Identifique a crianca com informacoes essenciais.',
-    fields: ['nome', 'nascimentoISO', 'sexo', 'responsavel.nome'],
   },
   {
     key: 'nascimento',
     title: 'Nascimento',
     description: 'Registre os dados do parto e primeiros dias.',
-    fields: [],
   },
   {
     key: 'triagens',
     title: 'Triagens neonatais',
     description: 'Informe os resultados dos testes de triagem.',
-    fields: [],
   },
   {
     key: 'vacinas',
     title: 'Vacinas de nascimento',
     description: 'Cheque as profilaxias aplicadas nas primeiras horas.',
-    fields: [],
   },
   {
     key: 'alta',
     title: 'Alta e aleitamento',
     description: 'Organize orientacoes e referencias na alta.',
-    fields: [],
+  },
+  {
+    key: 'neurodivergencias',
+    title: 'Neurodivergencias',
+    description: 'Registre diagnosticos ou suspeitas relevantes.',
   },
   {
     key: 'acompanhamentos',
     title: 'Acompanhamentos periodicos',
     description: 'Registre consultas e evolucao clinica.',
-    fields: [],
   },
 ];
+
+export const FORM_CRIANCA_SECTIONS: StepKey[] = STEP_DEFINITIONS.map((item) => item.key);
+
+export function getFormCriancaSection(stepKey: StepKey): StepDefinition {
+  return STEP_DEFINITIONS.find((item) => item.key === stepKey) ?? STEP_DEFINITIONS[0];
+}
 export function FormCrianca({
   onSubmit,
   onCancel,
@@ -364,6 +381,7 @@ export function FormCrianca({
   deleteLabel,
   status = 'idle',
   statusMessage,
+  section = 'dadosBasicos',
 }: FormCriancaProps) {
   const initialValues = useMemo<CriancaCreateInput>(
     () => ({
@@ -372,7 +390,6 @@ export function FormCrianca({
       sexo: (defaultValues?.sexo ?? 'O') as Sexo,
       cpf: defaultValues?.cpf ?? '',
       cartaoSUS: defaultValues?.cartaoSUS ?? '',
-      responsavel: defaultValues?.responsavel ?? { nome: '', parentesco: '', telefone: '' },
       tutorId: defaultValues?.tutorId,
       convenioOperadora: defaultValues?.convenioOperadora,
       convenioNumero: defaultValues?.convenioNumero,
@@ -380,7 +397,10 @@ export function FormCrianca({
       alergias: defaultValues?.alergias,
       doencasCronicas: defaultValues?.doencasCronicas,
       medicacoes: defaultValues?.medicacoes,
-      neurodivergencias: defaultValues?.neurodivergencias,
+      neurodivergencias: (defaultValues?.neurodivergencias ?? []).map((item) => ({
+        tipo: item.tipo,
+        grau: item.grau ?? '',
+      })),
       pediatra: defaultValues?.pediatra,
       avatarUrl: defaultValues?.avatarUrl,
       nascimento: defaultValues?.nascimento ?? {},
@@ -397,11 +417,19 @@ export function FormCrianca({
     handleSubmit,
     control,
     watch,
-    trigger,
     formState: { errors },
   } = useForm<CriancaCreateInput>({
     mode: 'onSubmit',
     defaultValues: initialValues,
+  });
+
+  const {
+    fields: neurodivergenciaFields,
+    append: appendNeurodivergencia,
+    remove: removeNeurodivergencia,
+  } = useFieldArray({
+    control,
+    name: 'neurodivergencias',
   });
 
   const { fields, append, remove } = useFieldArray({
@@ -409,11 +437,9 @@ export function FormCrianca({
     name: 'acompanhamentosPeriodicos',
   });
 
-  const [stepIndex, setStepIndex] = useState(0);
-  const step = STEP_DEFINITIONS[stepIndex];
-  const totalSteps = STEP_DEFINITIONS.length;
-  const isFirstStep = stepIndex === 0;
-  const isLastStep = stepIndex === totalSteps - 1;
+  const step = getFormCriancaSection(section);
+  const headerBadge = section === 'dadosBasicos' ? 'Cadastro inicial' : 'Atualizacao de dados';
+  const resolvedSubmitLabel = submitLabel ?? (section === 'dadosBasicos' ? 'Salvar cadastro' : 'Salvar');
 
   const necessidadeUti = watch('nascimento.necessitouUtiNeonatal');
 
@@ -425,54 +451,69 @@ export function FormCrianca({
     append(novaConsulta);
   };
 
-  const nextStep = async () => {
-    if (isLastStep) return;
-    const currentFields = step.fields;
-    let valid = true;
-    if (currentFields.length) {
-      valid = await trigger(currentFields, { shouldFocus: true });
-    }
-    if (!valid) {
-      return;
-    }
-    setStepIndex((prev) => Math.min(prev + 1, totalSteps - 1));
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
-  const previousStep = () => {
-    if (isFirstStep) return;
-    setStepIndex((prev) => Math.max(prev - 1, 0));
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
-
   const submit = handleSubmit(async (data) => {
-    const payload: CriancaCreateInput = {
-      ...data,
-      nascimentoISO: brToIsoDate(data.nascimentoISO) ?? '',
-      triagensNeonatais: convertTriagensToPayload(data.triagensNeonatais),
-      vacinasNascimento: convertVacinasToPayload(data.vacinasNascimento),
-      acompanhamentosPeriodicos: convertAcompanhamentosToPayload(data.acompanhamentosPeriodicos),
+    const preserved = {
+      ...(defaultValues ?? {}),
+    } as Partial<CriancaCreateInput> & {
+      id?: string;
+      criadoEmISO?: string;
+      atualizadoEmISO?: string;
     };
 
-    if (payload.responsavel) {
-      const nome = payload.responsavel.nome?.trim() ?? '';
-      const parentesco = payload.responsavel.parentesco?.trim();
-      const telefoneDigits = payload.responsavel.telefone
-        ? stripMask(payload.responsavel.telefone)
-        : '';
+    delete preserved.id;
+    delete preserved.criadoEmISO;
+    delete preserved.atualizadoEmISO;
 
-      if (!nome.length) {
-        delete payload.responsavel;
+    const payloadBase: Record<string, unknown> = { ...preserved };
+    (Object.entries(data) as [keyof CriancaCreateInput, unknown][]).forEach(([key, value]) => {
+      if (value !== undefined) {
+        payloadBase[key as string] = value;
+      }
+    });
+
+    const triagensPayload =
+      convertTriagensToPayload(data.triagensNeonatais ?? initialValues.triagensNeonatais) ??
+      preserved.triagensNeonatais;
+
+    const vacinasPayload =
+      convertVacinasToPayload(data.vacinasNascimento ?? initialValues.vacinasNascimento) ??
+      preserved.vacinasNascimento;
+
+    const acompanhamentosPayload =
+      convertAcompanhamentosToPayload(
+        data.acompanhamentosPeriodicos ?? initialValues.acompanhamentosPeriodicos,
+      ) ?? preserved.acompanhamentosPeriodicos;
+
+    const nascimentoISO =
+      brToIsoDate(data.nascimentoISO) ??
+      brToIsoDate(initialValues.nascimentoISO) ??
+      preserved.nascimentoISO ??
+      '';
+
+    payloadBase.nascimentoISO = nascimentoISO;
+    payloadBase.triagensNeonatais = triagensPayload;
+    payloadBase.vacinasNascimento = vacinasPayload;
+    payloadBase.acompanhamentosPeriodicos = acompanhamentosPayload;
+
+    const payload = payloadBase as CriancaCreateInput;
+
+    if (payload.neurodivergencias) {
+      const normalizadas = payload.neurodivergencias
+        .map((item) => {
+          const tipo = item?.tipo;
+          const grau = typeof item?.grau === 'string' ? item.grau.trim() : undefined;
+          if (!tipo) return undefined;
+          return {
+            tipo,
+            ...(grau ? { grau } : {}),
+          };
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+      if (normalizadas.length) {
+        payload.neurodivergencias = normalizadas;
       } else {
-        payload.responsavel = {
-          nome,
-          ...(parentesco ? { parentesco } : {}),
-          ...(telefoneDigits.length ? { telefone: telefoneDigits } : {}),
-        };
+        delete (payload as Partial<CriancaCreateInput>).neurodivergencias;
       }
     }
 
@@ -628,69 +669,6 @@ export function FormCrianca({
             </div>
           </div>
 
-          <div className="rounded-3xl border border-[rgba(var(--color-border),0.35)] bg-[rgba(var(--color-surface),0.4)] p-5 sm:p-6">
-            <h3 className="text-base font-semibold text-[rgb(var(--color-text))]">Responsavel principal</h3>
-            <p className="mt-1 text-sm text-[rgba(var(--color-text),0.65)]">
-              Informe quem responde pela crianca. Pelo menos o nome e obrigatorio.
-            </p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-3">
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-[rgb(var(--color-text))]">
-                  Nome do responsavel
-                </label>
-                <input
-                  {...register('responsavel.nome', {
-                    required: 'Informe o nome do responsavel',
-                    setValueAs: (value) => (typeof value === 'string' ? value.trimStart() : value),
-                  })}
-                  className={inputClass}
-                  placeholder="Maria Silva"
-                />
-                {errors.responsavel?.nome && (
-                  <small className="text-sm text-red-600">{errors.responsavel.nome.message}</small>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[rgb(var(--color-text))]">
-                  Parentesco
-                </label>
-                <input
-                  {...register('responsavel.parentesco')}
-                  className={inputClass}
-                  placeholder="Mae, pai, tia..."
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium text-[rgb(var(--color-text))]">
-                  Telefone
-                </label>
-                <Controller
-                  control={control}
-                  name="responsavel.telefone"
-                  render={({ field }) => (
-                    <MaskedInput
-                      mask="(99) 99999-9999"
-                      value={field.value ?? ''}
-                      onChange={(event) => field.onChange(stripMask(event.target.value))}
-                      onBlur={field.onBlur}
-                    >
-                      {({ value, onChange, onBlur }) => (
-                        <input
-                          name={field.name}
-                          ref={field.ref}
-                          value={value}
-                          onChange={onChange}
-                          onBlur={onBlur}
-                          className={inputClass}
-                          placeholder="(85) 99999-9999"
-                        />
-                      )}
-                    </MaskedInput>
-                  )}
-                />
-              </div>
-            </div>
-          </div>
         </section>
       );
       break;
@@ -1211,6 +1189,80 @@ export function FormCrianca({
         </section>
       );
       break;
+    case 'neurodivergencias':
+      stepContent = (
+        <section className="space-y-6">
+          <p className="text-sm text-[rgba(var(--color-text),0.7)]">
+            Registre diagnosticos ou observacoes formais informadas por profissionais de saude.
+          </p>
+          <div className="space-y-4">
+            {neurodivergenciaFields.length ? (
+              neurodivergenciaFields.map((fieldItem, index) => (
+                <div
+                  key={fieldItem.id}
+                  className="rounded-3xl border border-[rgba(var(--color-border),0.4)] bg-[rgba(var(--color-surface),0.7)] p-4 shadow-inner"
+                >
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium">Tipo</label>
+                      <select
+                        {...register(`neurodivergencias.${index}.tipo` as const, {
+                          required: 'Informe o tipo',
+                        })}
+                        className={selectClass}
+                      >
+                        <option value="">Selecione</option>
+                        {neurodivergenciaOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.neurodivergencias?.[index]?.tipo ? (
+                        <small className="text-sm text-red-600">
+                          {errors.neurodivergencias[index]?.tipo?.message}
+                        </small>
+                      ) : null}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium">Grau ou observacoes</label>
+                      <input
+                        {...register(`neurodivergencias.${index}.grau` as const)}
+                        className={inputClass}
+                        placeholder="Ex.: leve, moderado, acompanhamento multiprofissional..."
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeNeurodivergencia(index)}
+                      disabled={isSubmitting}
+                    >
+                      Remover registro
+                    </Button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="rounded-2xl border border-dashed border-[rgba(var(--color-border),0.5)] bg-[rgba(var(--color-surface),0.6)] px-4 py-6 text-center text-sm text-[rgba(var(--color-text),0.6)]">
+                Nenhuma neurodivergencia adicionada. Utilize o botao abaixo para registrar um novo item.
+              </p>
+            )}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => appendNeurodivergencia({ tipo: 'TEA', grau: '' })}
+            disabled={isSubmitting}
+          >
+            Adicionar neurodivergencia
+          </Button>
+        </section>
+      );
+      break;
     case 'acompanhamentos':
       stepContent = (
         <section className="space-y-6">
@@ -1455,11 +1507,9 @@ export function FormCrianca({
     <form onSubmit={submit} className="space-y-8">
       <div className="rounded-2xl bg-[rgba(var(--color-primary),0.06)] px-4 py-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-[rgba(var(--color-text),0.55)]">
-          Progresso do cadastro
+          {headerBadge}
         </p>
-        <p className="text-sm font-semibold text-[rgb(var(--color-primary))]">
-          Etapa {stepIndex + 1} de {totalSteps}: {step.title}
-        </p>
+        <p className="text-sm font-semibold text-[rgb(var(--color-primary))]">{step.title}</p>
         <p className="text-sm text-[rgba(var(--color-text),0.65)]">{step.description}</p>
       </div>
 
@@ -1482,21 +1532,9 @@ export function FormCrianca({
           Cancelar
         </Button>
 
-        {!isFirstStep ? (
-          <Button type="button" variant="outline" onClick={previousStep} disabled={isSubmitting}>
-            Voltar etapa
-          </Button>
-        ) : null}
-
-        {isLastStep ? (
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Salvando...' : submitLabel ?? 'Finalizar cadastro'}
-          </Button>
-        ) : (
-          <Button type="button" onClick={nextStep} disabled={isSubmitting}>
-            Salvar e avancar
-          </Button>
-        )}
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Salvando...' : resolvedSubmitLabel}
+        </Button>
       </div>
 
       {status !== 'idle' && statusMessage ? (
@@ -1513,3 +1551,4 @@ export function FormCrianca({
     </form>
   );
 }
+

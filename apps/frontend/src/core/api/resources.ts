@@ -12,21 +12,11 @@ import type {
   Treatment,
 } from '../types/api';
 
-const rawTutorId = (import.meta.env.VITE_TUTOR_ID as string | undefined)?.trim();
-const DEFAULT_TUTOR_ID = rawTutorId && rawTutorId.length > 0 ? rawTutorId : 'demo-tutor';
+type ParamValue = string | number | boolean | undefined | null;
 
-type TutorParamValue = string | number | boolean | undefined;
-
-function withTutorParams(
-  params: Record<string, TutorParamValue> = {},
-): Record<string, string | number | boolean> {
-  const merged: Record<string, TutorParamValue> = {
-    tutorId: DEFAULT_TUTOR_ID,
-    ...params,
-  };
-
+function sanitizeParams(params: Record<string, ParamValue> = {}) {
   return Object.fromEntries(
-    Object.entries(merged).filter(([, value]) => value !== undefined && value !== null),
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null),
   ) as Record<string, string | number | boolean>;
 }
 
@@ -44,9 +34,7 @@ async function safeRequest<T>(request: () => Promise<T>, fallback: T): Promise<T
 
 export async function fetchFamilies() {
   return safeRequest(async () => {
-    const response = await api.get<Family[]>(endpoints.families, {
-      params: withTutorParams(),
-    });
+    const response = await api.get<Family[]>(endpoints.families);
     return asArray<Family>(response.data);
   }, []);
 }
@@ -64,7 +52,7 @@ type TreatmentsQuery = {
 export async function fetchTreatments(params: TreatmentsQuery = {}) {
   return safeRequest(async () => {
     const response = await api.get<Treatment[]>(endpoints.treatments, {
-      params: withTutorParams({
+      params: sanitizeParams({
         familyId: params.familyId,
         childId: params.childId,
       }),
@@ -84,7 +72,7 @@ export async function fetchTodayRoutine(
 ) {
   return safeRequest(async () => {
     const response = await api.get<RoutineItem[]>(endpoints.doses, {
-      params: withTutorParams({
+      params: sanitizeParams({
         date,
         childId: options.childId,
       }),
@@ -94,9 +82,7 @@ export async function fetchTodayRoutine(
 }
 
 export async function fetchAlerts() {
-  const response = await api.get<Alert[]>(endpoints.alerts, {
-    params: withTutorParams(),
-  });
+  const response = await api.get<Alert[]>(endpoints.alerts);
   return asArray<Alert>(response.data);
 }
 
@@ -111,7 +97,7 @@ type AttendancesQuery = {
 export async function fetchAttendances(params: AttendancesQuery = {}) {
   return safeRequest(async () => {
     const response = await api.get<Attendance[]>(endpoints.attendances, {
-      params: withTutorParams({
+      params: sanitizeParams({
         pacienteId: params.patientId,
         tipo: params.type,
         status: params.status,
@@ -124,9 +110,7 @@ export async function fetchAttendances(params: AttendancesQuery = {}) {
 }
 
 export async function fetchAttendanceById(id: string) {
-  const response = await api.get<Attendance>(endpoints.attendanceById(id), {
-    params: withTutorParams(),
-  });
+  const response = await api.get<Attendance>(endpoints.attendanceById(id));
   return response.data;
 }
 
@@ -148,9 +132,7 @@ export async function deleteAttendance(id: string) {
 }
 
 export async function fetchProfessionals() {
-  const response = await api.get<Professional[]>(endpoints.professionals, {
-    params: withTutorParams(),
-  });
+  const response = await api.get<Professional[]>(endpoints.professionals);
   return response.data;
 }
 

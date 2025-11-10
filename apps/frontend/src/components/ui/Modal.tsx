@@ -9,6 +9,7 @@ type ModalProps = {
   description?: string;
   children: React.ReactNode;
   closeLabel?: string;
+  showCloseButton?: boolean;
 };
 
 const MODAL_ROOT_ID = 'modal-root';
@@ -24,7 +25,15 @@ function ensureModalRoot() {
   return root;
 }
 
-export function Modal({ open, onClose, title, description, children, closeLabel = 'Fechar' }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  closeLabel = 'Fechar',
+  showCloseButton = true,
+}: ModalProps) {
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -54,7 +63,16 @@ export function Modal({ open, onClose, title, description, children, closeLabel 
     const previouslyFocused = document.activeElement as HTMLElement | null;
 
     requestAnimationFrame(() => {
-      contentRef.current?.querySelector<HTMLElement>('[data-modal-initial-focus]')?.focus();
+      const manualSelection =
+        contentRef.current?.querySelector<HTMLElement>('[data-modal-initial-focus]');
+      if (manualSelection) {
+        manualSelection.focus();
+        return;
+      }
+      const autoFocusTarget = contentRef.current?.querySelector<HTMLElement>(
+        'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])',
+      );
+      autoFocusTarget?.focus();
     });
 
     return () => {
@@ -97,11 +115,13 @@ export function Modal({ open, onClose, title, description, children, closeLabel 
           ) : null}
         </header>
         <div className="space-y-4">{children}</div>
-        <footer className="mt-6 flex justify-end">
-          <Button variant="ghost" onClick={onClose} data-modal-initial-focus>
-            {closeLabel}
-          </Button>
-        </footer>
+        {showCloseButton ? (
+          <footer className="mt-6 flex justify-end">
+            <Button variant="ghost" onClick={onClose} data-modal-initial-focus>
+              {closeLabel}
+            </Button>
+          </footer>
+        ) : null}
       </div>
     </div>,
     root,

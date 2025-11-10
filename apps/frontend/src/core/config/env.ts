@@ -5,8 +5,6 @@ const apiHttpBase =
 const apiWsPath = (import.meta.env.VITE_API_WS_PATH ?? '').trim() || '/socket.io';
 const logoutRedirect =
   (import.meta.env.VITE_LOGOUT_URL ?? '/').trim() || '/';
-const googleAuthUrl = (import.meta.env.VITE_GOOGLE_AUTH_URL ?? '').trim();
-const govBrAuthUrl = (import.meta.env.VITE_GOVBR_AUTH_URL ?? '').trim();
 
 if (!rawApiUrl && !import.meta.env.DEV) {
   // eslint-disable-next-line no-console
@@ -17,6 +15,4 @@ export const env = {
   apiHttpBase,
   apiWsPath,
   logoutRedirect,
-  googleAuthUrl,
-  govBrAuthUrl,
 };

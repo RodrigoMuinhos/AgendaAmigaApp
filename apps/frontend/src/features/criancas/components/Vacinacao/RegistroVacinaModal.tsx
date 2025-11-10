@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import dayjs from 'dayjs';
+import { Check, X } from 'lucide-react';
 import { Modal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/button';
 import { Campo } from '../Campo';
@@ -99,7 +100,7 @@ export function RegistroVacinaModal({
       onClose={onClose}
       title="Registrar vacina"
       description="Informe os dados principais da aplicacao para manter o historico atualizado."
-      closeLabel="Cancelar"
+      showCloseButton={false}
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -111,6 +112,7 @@ export function RegistroVacinaModal({
                 required: 'Informe a data da aplicacao.',
                 validate: (value) => (dayjs(value).isValid() ? true : 'Data invalida.'),
               })}
+              data-modal-initial-focus
               className="w-full rounded-2xl border border-[rgba(var(--color-border),0.4)] bg-transparent px-4 py-3 text-sm shadow-inner focus:border-[rgb(var(--color-primary))] focus:outline-none focus:ring-2 focus:ring-[rgba(30,136,229,0.25)]"
             />
           </Campo>
@@ -187,11 +189,24 @@ export function RegistroVacinaModal({
         </Campo>
 
         <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose}>
-            Cancelar
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            className="h-11 w-11 px-0 py-0"
+            aria-label="Cancelar"
+            title="Cancelar"
+          >
+            <X className="h-5 w-5" aria-hidden />
           </Button>
-          <Button type="submit" isLoading={isSubmitting}>
-            Salvar registro
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
+            className="h-11 w-11 px-0 py-0"
+            aria-label="Salvar registro"
+            title="Salvar registro"
+          >
+            <Check className="h-5 w-5" aria-hidden />
           </Button>
         </div>
       </form>

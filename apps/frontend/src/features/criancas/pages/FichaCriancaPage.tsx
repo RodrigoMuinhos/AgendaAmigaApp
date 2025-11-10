@@ -1,17 +1,17 @@
 import {
+  ArrowLeft,
   Baby,
   CalendarDays,
-  ClipboardList,
   Droplet,
   FileText,
   FlaskConical,
   Heart,
   IdCard,
   Milk,
-  Phone,
+  Pencil,
+  Plus,
   Syringe,
   Trash2,
-  UserCircle,
   UserPlus,
 } from 'lucide-react';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -19,7 +19,8 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { useCriancasStore } from '../store';
-import type { AcompanhamentoRegistro, Crianca } from '../types';
+import type { StepKey } from '../components/FormCrianca';
+import type { Crianca } from '../types';
 import { formatarIdade } from '../utils/idade';
 
 type SectionProps = {
@@ -29,9 +30,10 @@ type SectionProps = {
   children: ReactNode;
   empty?: boolean;
   emptyMessage?: string;
+  actions?: ReactNode;
 };
 
-function Section({ title, icon, description, children, empty, emptyMessage }: SectionProps) {
+function Section({ title, icon, description, children, empty, emptyMessage, actions }: SectionProps) {
   return (
     <Card className="rounded-3xl bg-[rgb(var(--color-surface))] shadow-soft">
       <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -46,6 +48,7 @@ function Section({ title, icon, description, children, empty, emptyMessage }: Se
             ) : null}
           </div>
         </div>
+        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
       </CardHeader>
       <CardContent>
         {empty ? (
@@ -126,45 +129,6 @@ function InfoList({
   );
 }
 
-function formatAcompanhamento(registro: AcompanhamentoRegistro) {
-  const campos: Array<{ label: string; value?: string }> = [
-    { label: 'Data da consulta', value: formatDate(registro.dataConsulta) },
-    {
-      label: 'Idade corrigida (meses)',
-      value: registro.idadeCorrigidaMeses !== undefined ? String(registro.idadeCorrigidaMeses) : undefined,
-    },
-    { label: 'Peso (kg)', value: registro.pesoKg !== undefined ? String(registro.pesoKg) : undefined },
-    {
-      label: 'Comprimento (cm)',
-      value: registro.comprimentoCm !== undefined ? String(registro.comprimentoCm) : undefined,
-    },
-    {
-      label: 'Perimetro cefalico (cm)',
-      value: registro.perimetroCefalicoCm !== undefined ? String(registro.perimetroCefalicoCm) : undefined,
-    },
-    { label: 'IMC', value: registro.imc !== undefined ? String(registro.imc) : undefined },
-    { label: 'z peso/idade', value: registro.zPesoIdade !== undefined ? String(registro.zPesoIdade) : undefined },
-    {
-      label: 'z altura/idade',
-      value: registro.zAlturaIdade !== undefined ? String(registro.zAlturaIdade) : undefined,
-    },
-    {
-      label: 'z IMC/idade',
-      value: registro.zIMCIdade !== undefined ? String(registro.zIMCIdade) : undefined,
-    },
-    { label: 'Pressao arterial', value: registro.pressaoArterial },
-    { label: 'Alimentacao atual', value: humanize(registro.alimentacaoAtual) },
-    { label: 'Suplementos', value: registro.suplementos },
-    { label: 'Intercorrencias', value: registro.intercorrenciasDesdeUltimaConsulta },
-    { label: 'Medicacoes', value: registro.medicacoesUsoContinuo },
-    { label: 'Avaliacao do desenvolvimento', value: registro.avaliacaoDesenvolvimento },
-    { label: 'Encaminhamentos', value: registro.encaminhamentos },
-    { label: 'Observacoes', value: registro.observacoesProfissional },
-    { label: 'Profissional responsavel', value: registro.profissionalResponsavel },
-  ];
-
-  return campos.filter((item) => item.value && String(item.value).trim().length);
-}
 
 export function FichaCriancaPage() {
   const { id } = useParams<{ id: string }>();
@@ -260,7 +224,6 @@ export function FichaCriancaPage() {
   const triagens = crianca.triagensNeonatais ?? {};
   const vacinasNascimento = crianca.vacinasNascimento ?? {};
   const altaAleitamento = crianca.altaAleitamento ?? {};
-  const acompanhamentos = crianca.acompanhamentosPeriodicos ?? [];
 
   const temNascimento =
     nascimento.pesoAoNascerGramas !== undefined ||
@@ -296,6 +259,8 @@ export function FichaCriancaPage() {
     Boolean(altaAleitamento.profissionalReferencia) ||
     Boolean(altaAleitamento.profissionalReferenciaCRM);
 
+  const temNeurodivergencias = (crianca.neurodivergencias?.length ?? 0) > 0;
+
   const profissionalReferenciaDescricao = (() => {
     const nome = altaAleitamento.profissionalReferencia?.trim();
     const crm = altaAleitamento.profissionalReferenciaCRM?.trim();
@@ -311,7 +276,23 @@ export function FichaCriancaPage() {
     return undefined;
   })();
 
-  const temAcompanhamentos = acompanhamentos.length > 0;
+  const openSectionForm = (target: StepKey) => {
+    if (!crianca) return;
+    navigate(`/criancas/${crianca.id}/editar?section=${target}`);
+  };
+
+  const renderSectionAction = (target: StepKey, hasData: boolean) => (
+    <Button
+      type="button"
+      size="sm"
+      variant="ghost"
+      className="gap-1"
+      onClick={() => openSectionForm(target)}
+    >
+      {hasData ? <Pencil className="h-4 w-4" aria-hidden /> : <Plus className="h-4 w-4" aria-hidden />}
+      {hasData ? 'Editar' : 'Adicionar'}
+    </Button>
+  );
 
   const handleDelete = async () => {
     const confirmar = window.confirm('Deseja excluir esta crianca? Esta acao nao pode ser desfeita.');
@@ -350,36 +331,82 @@ export function FichaCriancaPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" variant="ghost" onClick={() => navigate('/criancas')}>
-            Voltar
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => navigate('/criancas')}
+            className="h-11 w-11 px-0 py-0"
+            aria-label="Voltar"
+          >
+            <ArrowLeft className="h-5 w-5" aria-hidden />
           </Button>
-          <Button type="button" variant="outline" onClick={handleDelete}>
-            <Trash2 className="mr-2 h-4 w-4" aria-hidden />
-            Excluir
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleDelete}
+            className="h-11 w-11 border-[rgba(var(--color-danger),0.4)] px-0 py-0 text-[rgb(var(--color-danger))] hover:border-[rgb(var(--color-danger))] hover:bg-[rgba(var(--color-danger),0.1)] hover:text-[rgb(var(--color-danger))]"
+            aria-label="Excluir"
+          >
+            <Trash2 className="h-5 w-5" aria-hidden />
           </Button>
-          <Button type="button" onClick={() => navigate(`/criancas/${crianca.id}/editar`)}>
-            Editar
+          <Button
+            type="button"
+            onClick={() => navigate(`/criancas/${crianca.id}/editar`)}
+            className="h-11 w-11 px-0 py-0"
+            aria-label="Editar"
+          >
+            <Pencil className="h-5 w-5" aria-hidden />
           </Button>
         </div>
       </div>
 
-      <Section
-        title="Responsavel"
-        icon={<UserCircle className="h-5 w-5" aria-hidden />}
-        description="Informacoes de contato do cuidador principal."
-      >
-        <InfoList
-          items={[
-            { label: 'Nome:', value: crianca.responsavel?.nome ?? 'Nao informado' },
-            { label: 'Parentesco:', value: humanize(crianca.responsavel?.parentesco) },
-            {
-              label: 'Telefone:',
-              value: crianca.responsavel?.telefone ?? 'Nao informado',
-              icon: <Phone className="h-4 w-4" aria-hidden />,
-            },
-          ]}
-        />
-      </Section>
+      <div className="rounded-3xl border border-[rgba(var(--color-primary),0.25)] bg-[rgba(var(--color-primary),0.08)] p-5 shadow-soft">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[rgba(var(--color-primary),0.75)]">
+              Neurodivergencia
+            </p>
+            <p className="text-base text-[rgba(var(--color-text),0.75)]">
+              {temNeurodivergencias
+                ? 'Acompanhamento necessario para garantir suporte adequado.'
+                : 'Nenhum registro neurodivergente ate o momento.'}
+            </p>
+          </div>
+          {temNeurodivergencias ? (
+            <span className="rounded-full bg-[rgb(var(--color-primary))] px-4 py-1 text-sm font-semibold text-white">
+              {crianca.neurodivergencias?.length} registro
+              {crianca.neurodivergencias && crianca.neurodivergencias.length > 1 ? 's' : ''}
+            </span>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="gap-2"
+              onClick={() => navigate(`/criancas/${crianca.id}/editar`)}
+            >
+              Registrar informacao
+            </Button>
+          )}
+        </div>
+        {temNeurodivergencias ? (
+          <ul className="mt-4 flex flex-wrap gap-2 text-sm text-[rgb(var(--color-text))]">
+            {crianca.neurodivergencias?.map((item, index) => (
+              <li
+                key={`${item.tipo}-${index}`}
+                className="rounded-full border border-[rgba(var(--color-primary),0.4)] bg-[rgba(var(--color-primary),0.1)] px-3 py-1"
+              >
+                <span className="font-semibold">{humanize(item.tipo)}</span>
+                {item.grau ? <span className="text-xs text-[rgba(var(--color-text),0.7)]"> · {humanize(item.grau)}</span> : null}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-3 text-xs text-[rgba(var(--color-text),0.65)]">
+            Anote diagnosticos confirmados, observacoes clinicas ou suspeitas relevantes para a equipe multiprofissional.
+          </p>
+        )}
+      </div>
 
       <Section
         title="Nascimento"
@@ -387,65 +414,92 @@ export function FichaCriancaPage() {
         description="Dados coletados na maternidade."
         empty={!temNascimento}
         emptyMessage="Sem informacoes cadastradas sobre o nascimento."
+        actions={renderSectionAction('nascimento', temNascimento)}
       >
-        <InfoList
-          items={[
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {[
             {
-              label: 'Peso ao nascer:',
+              label: 'Peso ao nascer',
               value:
                 nascimento.pesoAoNascerGramas !== undefined
                   ? `${nascimento.pesoAoNascerGramas} g`
-                  : 'Nao informado',
+                  : undefined,
+              highlight: true,
             },
             {
-              label: 'Comprimento:',
+              label: 'Comprimento',
               value:
                 nascimento.comprimentoAoNascerCm !== undefined
                   ? `${nascimento.comprimentoAoNascerCm} cm`
-                  : 'Nao informado',
+                  : undefined,
+              highlight: true,
             },
             {
-              label: 'Perimetro cefalico:',
+              label: 'Perimetro cefalico',
               value:
                 nascimento.perimetroCefalicoAoNascerCm !== undefined
                   ? `${nascimento.perimetroCefalicoAoNascerCm} cm`
-                  : 'Nao informado',
+                  : undefined,
+              highlight: true,
             },
-            { label: 'Tipo de parto:', value: humanize(nascimento.tipoParto) },
+            { label: 'Tipo de parto', value: humanize(nascimento.tipoParto) },
             {
-              label: 'Idade gestacional:',
+              label: 'Idade gestacional',
               value:
                 nascimento.idadeGestacionalSemanas !== undefined
                   ? `${nascimento.idadeGestacionalSemanas} semanas`
-                  : 'Nao informado',
+                  : undefined,
             },
             {
-              label: 'Apgar 1 min:',
-              value: nascimento.apgar1min !== undefined ? String(nascimento.apgar1min) : 'Nao informado',
+              label: 'Apgar 1° minuto',
+              value: nascimento.apgar1min !== undefined ? String(nascimento.apgar1min) : undefined,
             },
             {
-              label: 'Apgar 5 min:',
-              value: nascimento.apgar5min !== undefined ? String(nascimento.apgar5min) : 'Nao informado',
+              label: 'Apgar 5° minuto',
+              value: nascimento.apgar5min !== undefined ? String(nascimento.apgar5min) : undefined,
             },
-            { label: 'Intercorrencias:', value: nascimento.intercorrenciasParto },
+            { label: 'Intercorrencias', value: nascimento.intercorrenciasParto },
             {
-              label: 'Necessitou UTI neonatal:',
+              label: 'Necessitou UTI neonatal',
               value: formatSimNao(nascimento.necessitouUtiNeonatal),
             },
             {
-              label: 'Dias em UTI:',
+              label: 'Dias em UTI',
               value:
                 nascimento.diasUtiNeonatal !== undefined ? String(nascimento.diasUtiNeonatal) : undefined,
               hide: nascimento.necessitouUtiNeonatal !== 'sim',
             },
             {
-              label: 'Ictericia neonatal:',
+              label: 'Ictericia neonatal',
               value: formatSimNao(nascimento.ictericiaNeonatal),
             },
-            { label: 'Grupo sanguineo da crianca:', value: nascimento.grupoSanguineoCrianca },
-            { label: 'Grupo sanguineo da mae:', value: nascimento.grupoSanguineoMae },
-          ]}
-        />
+            { label: 'Grupo sanguineo da crianca', value: nascimento.grupoSanguineoCrianca },
+            { label: 'Grupo sanguineo da mae', value: nascimento.grupoSanguineoMae },
+          ]
+            .filter((item) => !item.hide)
+            .map((item) => {
+              const label = item.label;
+              const value = item.value ?? 'Nao informado';
+              const highlight = item.highlight ?? false;
+
+              return (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-[rgba(var(--color-text),0.18)] bg-[rgba(var(--color-surface),0.95)] px-4 py-3 shadow-soft"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[rgba(var(--color-text),0.6)]">
+                    {label}
+                  </p>
+                  <p
+                    className={`mt-2 ${highlight ? 'text-lg font-semibold text-[rgb(var(--color-primary))]' : 'text-sm font-semibold text-[rgb(var(--color-text))]'
+                      }`}
+                  >
+                    {value}
+                  </p>
+                </div>
+              );
+            })}
+        </div>
       </Section>
 
       <Section
@@ -454,6 +508,7 @@ export function FichaCriancaPage() {
         description="Resultados dos testes obrigatorios realizados nas primeiras horas."
         empty={!temTriagens}
         emptyMessage="Sem registros de triagens neonatais."
+        actions={renderSectionAction('triagens', temTriagens)}
       >
         <div className="grid gap-4 md:grid-cols-2">
           {[
@@ -492,6 +547,7 @@ export function FichaCriancaPage() {
         icon={<Syringe className="h-5 w-5" aria-hidden />}
         description="Profilaxias e doses aplicadas logo apos o parto."
         empty={!temVacinas}
+        actions={renderSectionAction('vacinas', temVacinas)}
       >
         <InfoList
           items={[
@@ -532,6 +588,7 @@ export function FichaCriancaPage() {
         icon={<Milk className="h-5 w-5" aria-hidden />}
         description="Orientacoes fornecidas a familia no momento da alta."
         empty={!temAlta}
+        actions={renderSectionAction('alta', temAlta)}
       >
         <InfoList
           items={[
@@ -541,40 +598,6 @@ export function FichaCriancaPage() {
             { label: 'Orientacoes na alta:', value: altaAleitamento.orientacoesNaAlta },
           ]}
         />
-      </Section>
-
-      <Section
-        title="Acompanhamentos periodicos"
-        icon={<ClipboardList className="h-5 w-5" aria-hidden />}
-        description="Consultas registradas para monitorar o desenvolvimento."
-        empty={!temAcompanhamentos}
-        emptyMessage="Nenhum acompanhamento registrado ate o momento."
-      >
-        <div className="grid gap-4">
-          {acompanhamentos.map((registro, index) => (
-            <div
-              key={`${registro.dataConsulta ?? index}-${index}`}
-              className="rounded-2xl border border-[rgba(var(--color-border),0.3)] bg-[rgba(var(--color-surface),0.7)] px-4 py-4 shadow-inner"
-            >
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-[rgb(var(--color-text))]">
-                  Consulta {index + 1}
-                </p>
-                <span className="text-xs uppercase tracking-wide text-[rgba(var(--color-text),0.6)]">
-                  {formatDate(registro.dataConsulta)}
-                </span>
-              </div>
-              <div className="grid gap-2 text-sm md:grid-cols-2">
-                {formatAcompanhamento(registro).map((item, itemIndex) => (
-                  <div key={itemIndex} className="rounded-xl bg-[rgba(var(--color-primary),0.07)] px-3 py-2">
-                    <span className="block text-[rgba(var(--color-text),0.55)]">{item.label}</span>
-                    <span className="font-medium text-[rgb(var(--color-text))]">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
       </Section>
 
       <Section
@@ -612,12 +635,15 @@ export function FichaCriancaPage() {
         </Section>
       ) : null}
 
-      {(crianca.neurodivergencias?.length ?? 0) > 0 ? (
-        <Section
-          title="Neurodivergencias"
-          icon={<FileText className="h-5 w-5" aria-hidden />}
-          description="Registros informados pela familia ou pelos profissionais."
-        >
+      <Section
+        title="Neurodivergencias"
+        icon={<FileText className="h-5 w-5" aria-hidden />}
+        description="Registros informados pela familia ou pelos profissionais."
+        empty={!temNeurodivergencias}
+        emptyMessage="Nenhuma neurodivergencia registrada. Atualize a ficha caso haja diagnosticos ou observacoes relevantes."
+        actions={renderSectionAction('neurodivergencias', temNeurodivergencias)}
+      >
+        {temNeurodivergencias ? (
           <div className="grid gap-3 md:grid-cols-2">
             {crianca.neurodivergencias?.map((item, index) => (
               <div
@@ -631,8 +657,8 @@ export function FichaCriancaPage() {
               </div>
             ))}
           </div>
-        </Section>
-      ) : null}
+        ) : null}
+      </Section>
     </div>
   );
 }

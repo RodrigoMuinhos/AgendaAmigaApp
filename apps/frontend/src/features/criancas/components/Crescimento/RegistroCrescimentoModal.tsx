@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import dayjs from 'dayjs';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Check, X } from 'lucide-react';
 import { Modal } from '../../../../components/ui/Modal';
 import { Button } from '../../../../components/ui/button';
 import { Campo } from '../Campo';
@@ -107,7 +108,7 @@ export function RegistroCrescimentoModal({
   });
 
   return (
-    <Modal open={open} onClose={onClose} title={titulo} description={descricao} closeLabel='Cancelar'>
+    <Modal open={open} onClose={onClose} title={titulo} description={descricao} showCloseButton={false}>
       <form onSubmit={onSubmitInterno} className='space-y-4'>
         <div className='grid gap-4 sm:grid-cols-2'>
           <Campo id='dataISO' label='Data' required error={errors.dataISO?.message}>
@@ -115,6 +116,7 @@ export function RegistroCrescimentoModal({
               id='dataISO'
               type='date'
               {...register('dataISO')}
+              data-modal-initial-focus
               className='w-full rounded-2xl border border-[rgba(var(--color-border),0.4)] bg-transparent px-4 py-3 text-sm shadow-inner focus:border-[rgb(var(--color-primary))] focus:outline-none focus:ring-2 focus:ring-[rgba(30,136,229,0.25)]'
             />
           </Campo>
@@ -163,15 +165,27 @@ export function RegistroCrescimentoModal({
           <p className='text-sm font-semibold text-red-500'>{errors.pesoKg.message}</p>
         ) : null}
         <div className='flex justify-end gap-3 pt-2'>
-          <Button type='button' variant='ghost' onClick={onClose}>
-            Cancelar
+          <Button
+            type='button'
+            variant='ghost'
+            onClick={onClose}
+            className='h-11 w-11 px-0 py-0'
+            aria-label='Cancelar'
+            title='Cancelar'
+          >
+            <X className='h-5 w-5' aria-hidden />
           </Button>
-          <Button type='submit' isLoading={isSubmitting}>
-            {labelBotao}
+          <Button
+            type='submit'
+            isLoading={isSubmitting}
+            className='h-11 w-11 px-0 py-0'
+            aria-label={labelBotao}
+            title={labelBotao}
+          >
+            <Check className='h-5 w-5' aria-hidden />
           </Button>
         </div>
       </form>
     </Modal>
   );
 }
-

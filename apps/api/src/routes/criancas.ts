@@ -2,8 +2,12 @@ import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
 import crypto from "node:crypto";
 
+import { authenticate, type AuthenticatedRequest } from "../http/middlewares/authenticate";
+
 const prisma = new PrismaClient();
 const router = Router();
+
+router.use("/criancas", authenticate);
 
 router.post("/criancas", async (req, res) => {
   try {
@@ -11,8 +15,6 @@ router.post("/criancas", async (req, res) => {
       nome,
       nascimentoISO,
       sexo,
-      tutor_id,
-      tutorId,
       responsavel,
       cartaoSUS,
       cpf,
@@ -21,7 +23,12 @@ router.post("/criancas", async (req, res) => {
       tipoSanguineo,
     } = req.body ?? {};
 
-    const tutor = tutor_id ?? tutorId;
+    const authReq = req as AuthenticatedRequest;
+    const tutor = authReq.user?.id;
+
+    if (!tutor) {
+      return res.status(401).json({ message: "Nao autenticado" });
+    }
     const trimmedNome = typeof nome === "string" ? nome.trim() : "";
     const nascimento = typeof nascimentoISO === "string" ? nascimentoISO.trim() : "";
 

@@ -18,26 +18,68 @@ import type {
 } from './types';
 import { asArray } from '../../core/utils/arrays';
 
-const CADERNETA_STORAGE_KEY = 'agenda-amiga:cadernetas';
-const SELECIONADA_STORAGE_KEY = 'agenda-amiga:crianca-selecionada';
+const CADERNETA_STORAGE_KEY_BASE = 'agenda-amiga:cadernetas';
+const SELECIONADA_STORAGE_KEY_BASE = 'agenda-amiga:crianca-selecionada';
+const STORAGE_ANON_SUFFIX = 'anon';
 
-const mensagemErroPadrao =
-  'Nao foi possivel atualizar as informacoes agora. Tente novamente em instantes.';
+function resolveStorageSuffix(tutorId?: string) {
+  return tutorId && tutorId.trim().length ? tutorId : STORAGE_ANON_SUFFIX;
+}
 
-function hidratarCadernetas(): Record<string, Caderneta> {
+function cadernetasStorageKey(tutorId?: string) {
+  return `${CADERNETA_STORAGE_KEY_BASE}:${resolveStorageSuffix(tutorId)}`;
+}
+
+function selecionadaStorageKey(tutorId?: string) {
+  return `${SELECIONADA_STORAGE_KEY_BASE}:${resolveStorageSuffix(tutorId)}`;
+}
+
+function migrateLegacyCadernetas(tutorId?: string) {
+  if (typeof window === 'undefined') return undefined;
+  if (!tutorId) return undefined;
+  try {
+    const legacy = window.localStorage.getItem(CADERNETA_STORAGE_KEY_BASE);
+    if (!legacy) return undefined;
+    window.localStorage.setItem(cadernetasStorageKey(tutorId), legacy);
+    window.localStorage.removeItem(CADERNETA_STORAGE_KEY_BASE);
+    return legacy;
+  } catch {
+    return undefined;
+  }
+}
+
+function migrateLegacySelecionada(tutorId?: string) {
+  if (typeof window === 'undefined') return undefined;
+  if (!tutorId) return undefined;
+  try {
+    const legacy = window.localStorage.getItem(SELECIONADA_STORAGE_KEY_BASE);
+    if (!legacy) return undefined;
+    window.localStorage.setItem(selecionadaStorageKey(tutorId), legacy);
+    window.localStorage.removeItem(SELECIONADA_STORAGE_KEY_BASE);
+    return legacy;
+  } catch {
+    return undefined;
+  }
+}
+
+function hidratarCadernetas(tutorId?: string): Record<string, Caderneta> {
   if (typeof window === 'undefined') {
     return {};
   }
+  const key = cadernetasStorageKey(tutorId);
   try {
-    const raw = window.localStorage.getItem(CADERNETA_STORAGE_KEY);
+    let raw = window.localStorage.getItem(key);
+    if (!raw) {
+      raw = migrateLegacyCadernetas(tutorId);
+    }
     if (!raw) return {};
     const parsed = JSON.parse(raw) as Record<string, Caderneta>;
     if (!parsed || typeof parsed !== 'object') return {};
     return Object.fromEntries(
-      Object.entries(parsed).map(([key, value]) => [
-        key,
+      Object.entries(parsed).map(([valueKey, value]) => [
+        valueKey,
         {
-          criancaId: value?.criancaId ?? key,
+          criancaId: value?.criancaId ?? valueKey,
           vacinacao: {
             historico: asArray(value?.vacinacao?.historico),
           },
@@ -52,36 +94,51 @@ function hidratarCadernetas(): Record<string, Caderneta> {
   }
 }
 
-function persistirCadernetas(data: Record<string, Caderneta>) {
+function persistirCadernetas(tutorId: string | undefined, data: Record<string, Caderneta>) {
   if (typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(CADERNETA_STORAGE_KEY, JSON.stringify(data));
-  } catch {
-    // ignore
-  }
-}
-
-function lerSelecionada(): string | undefined {
-  if (typeof window === 'undefined') return undefined;
-  try {
-    return window.localStorage.getItem(SELECIONADA_STORAGE_KEY) ?? undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function persistirSelecionada(id?: string) {
-  if (typeof window === 'undefined') return;
-  try {
-    if (!id) {
-      window.localStorage.removeItem(SELECIONADA_STORAGE_KEY);
-    } else {
-      window.localStorage.setItem(SELECIONADA_STORAGE_KEY, id);
+    window.localStorage.setItem(cadernetasStorageKey(tutorId), JSON.stringify(data));
+    if (tutorId) {
+      window.localStorage.removeItem(CADERNETA_STORAGE_KEY_BASE);
     }
   } catch {
     // ignore
   }
 }
+
+function lerSelecionada(tutorId?: string): string | undefined {
+  if (typeof window === 'undefined') return undefined;
+  const key = selecionadaStorageKey(tutorId);
+  try {
+    let value = window.localStorage.getItem(key) ?? undefined;
+    if (!value) {
+      value = migrateLegacySelecionada(tutorId) ?? undefined;
+    }
+    return value ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function persistirSelecionada(tutorId: string | undefined, id?: string) {
+  if (typeof window === 'undefined') return;
+  const key = selecionadaStorageKey(tutorId);
+  try {
+    if (!id) {
+      window.localStorage.removeItem(key);
+    } else {
+      window.localStorage.setItem(key, id);
+    }
+    if (tutorId) {
+      window.localStorage.removeItem(SELECIONADA_STORAGE_KEY_BASE);
+    }
+  } catch {
+    // ignore
+  }
+}
+
+const mensagemErroPadrao =
+  'Nao foi possivel atualizar as informacoes agora. Tente novamente em instantes.';
 
 function ordenarPorDataDesc(registros: VacinaRegistro[]) {
   return [...registros].sort((a, b) => b.dataISO.localeCompare(a.dataISO));
@@ -89,6 +146,17 @@ function ordenarPorDataDesc(registros: VacinaRegistro[]) {
 
 function ordenarCrescimento(registros: CrescimentoRegistro[]) {
   return [...registros].sort((a, b) => b.dataISO.localeCompare(a.dataISO));
+}
+
+function registrosCrescimentoIguais(a: CrescimentoRegistro, b: CrescimentoRegistro) {
+  return (
+    a.criancaId === b.criancaId &&
+    a.dataISO === b.dataISO &&
+    (a.pesoKg ?? null) === (b.pesoKg ?? null) &&
+    (a.estaturaCm ?? null) === (b.estaturaCm ?? null) &&
+    (a.perimetroCefalicoCm ?? null) === (b.perimetroCefalicoCm ?? null) &&
+    (a.observacoes ?? '') === (b.observacoes ?? '')
+  );
 }
 
 function agruparPorVacina(
@@ -113,6 +181,16 @@ function calcularIdadeMeses(nascimentoISO: string, hoje = new Date()): number {
     meses = (meses + 11) % 12;
   }
   return anos * 12 + meses;
+}
+
+function removerDuplicatasPorId<T extends { id: string }>(lista: T[]): T[] {
+  const mapa = new Map<string, T>();
+  for (const item of lista) {
+    if (!mapa.has(item.id)) {
+      mapa.set(item.id, item);
+    }
+  }
+  return Array.from(mapa.values());
 }
 
 function normalizarCriancaEntrada(rawInput: unknown): Crianca {
@@ -194,6 +272,7 @@ type ProximaDose = {
 };
 
 type CriancasState = {
+  tutorId?: string;
   criancas: Crianca[];
   cadernetas: Record<string, Caderneta>;
   selecionadaId?: string;
@@ -207,10 +286,13 @@ type CriancasState = {
   atualizar: (id: string, dados: CriancaCreateInput) => Promise<Crianca | undefined>;
   buscarPorId: (id: string) => Promise<Crianca | undefined>;
   remover: (id: string) => Promise<boolean>;
+  reset: () => void;
+  setTutor: (tutorId: string | undefined) => void;
   getCaderneta: (criancaId: string) => Caderneta;
   addVacina: (registro: VacinaRegistro) => void;
   addCrescimento: (registro: CrescimentoRegistro) => void;
   editarCrescimento: (criancaId: string, originalDataISO: string, registro: CrescimentoRegistro) => void;
+  removerCrescimento: (criancaId: string, registro: CrescimentoRegistro) => void;
   listarVacinasAplicadas: (criancaId: string) => VacinaRegistro[];
   listarMedidasCrescimento: (criancaId: string) => CrescimentoRegistro[];
   listarPendencias: (criancaId: string, catalogo: VacinaCatalogoItem[]) => Pendencia[];
@@ -222,17 +304,43 @@ type CriancasState = {
 };
 
 export const useCriancasStore = create<CriancasState>((set, get) => {
-  const selecionadaInicial = lerSelecionada();
+  const tutorInicial: string | undefined = undefined;
+  const selecionadaInicial = lerSelecionada(tutorInicial);
 
   return {
+    tutorId: tutorInicial,
     criancas: [],
-    cadernetas: hidratarCadernetas(),
+    cadernetas: hidratarCadernetas(tutorInicial),
     selecionadaId: selecionadaInicial,
     carregando: false,
     erro: undefined,
     limparErro: () => set({ erro: undefined }),
+    reset: () => {
+      const { tutorId } = get();
+      persistirSelecionada(tutorId, undefined);
+      persistirCadernetas(tutorId, {});
+      set({
+        criancas: [],
+        cadernetas: {},
+        selecionadaId: undefined,
+        carregando: false,
+        erro: undefined,
+      });
+    },
+    setTutor: (tutorId) => {
+      const cadernetas = hidratarCadernetas(tutorId);
+      const selecionadaId = lerSelecionada(tutorId);
+      set({
+        tutorId,
+        criancas: [],
+        cadernetas,
+        selecionadaId,
+        carregando: false,
+        erro: undefined,
+      });
+    },
     setSelecionada: (id) => {
-      persistirSelecionada(id);
+      persistirSelecionada(get().tutorId, id);
       set({ selecionadaId: id });
     },
     getSelecionada: () => {
@@ -244,12 +352,14 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
       set({ carregando: true, erro: undefined });
       try {
         const dados = await listarCriancas();
-        const normalizados = dados.map((item) => normalizarCriancaEntrada(item));
+        const normalizados = removerDuplicatasPorId(
+          dados.map((item) => normalizarCriancaEntrada(item)),
+        );
         set((estadoAtual) => {
           const selecionadaId = estadoAtual.selecionadaId;
           const selecionadaExisteApos = normalizados.some((item) => item.id === selecionadaId);
           if (!selecionadaExisteApos) {
-            persistirSelecionada(undefined);
+            persistirSelecionada(estadoAtual.tutorId, undefined);
           }
           return {
             criancas: normalizados,
@@ -265,12 +375,13 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
     criar: async (dados) => {
       set({ carregando: true, erro: undefined });
       try {
+        const tutorId = get().tutorId;
         const rawCrianca = await criarCriancaApi({
           ...dados,
-          tutorId: dados.tutorId ?? 'demo-tutor',
+          tutorId: dados.tutorId ?? tutorId,
         });
         const novaCrianca = normalizarCriancaEntrada(rawCrianca);
-        persistirSelecionada(novaCrianca.id);
+        persistirSelecionada(tutorId, novaCrianca.id);
         set((estadoAtual) => ({
           criancas: [novaCrianca, ...estadoAtual.criancas.filter((item) => item.id !== novaCrianca.id)],
           selecionadaId: novaCrianca.id,
@@ -306,7 +417,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
           criancas: estadoAtual.criancas.map((item) => (item.id === id ? atualizado : item)),
           carregando: false,
         }));
-        persistirSelecionada(id);
+        persistirSelecionada(get().tutorId, id);
         return atualizado;
       } catch (error) {
         console.error('Erro ao atualizar crianca', error);
@@ -318,7 +429,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
       const existente = get().criancas.find((item) => item.id === id);
       if (existente) {
         set({ selecionadaId: id });
-        persistirSelecionada(id);
+        persistirSelecionada(get().tutorId, id);
         return existente;
       }
       set({ carregando: true, erro: undefined });
@@ -332,7 +443,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
             carregando: false,
             selecionadaId: id,
           }));
-          persistirSelecionada(id);
+          persistirSelecionada(get().tutorId, id);
         } else {
           set({ carregando: false });
         }
@@ -350,11 +461,11 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
         set((estadoAtual) => {
           const criancasAtualizadas = estadoAtual.criancas.filter((item) => item.id !== id);
           const { [id]: _removida, ...cadernetasRestantes } = estadoAtual.cadernetas;
-          persistirCadernetas(cadernetasRestantes);
+          persistirCadernetas(estadoAtual.tutorId, cadernetasRestantes);
           const selecionadaId =
             estadoAtual.selecionadaId === id ? undefined : estadoAtual.selecionadaId;
           if (!selecionadaId) {
-            persistirSelecionada(undefined);
+            persistirSelecionada(estadoAtual.tutorId, undefined);
           }
           return {
             criancas: criancasAtualizadas,
@@ -379,7 +490,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
           crescimento: { registros: [] },
         };
         const atualizadas = { ...cadernetas, [criancaId]: nova };
-        persistirCadernetas(atualizadas);
+        persistirCadernetas(get().tutorId, atualizadas);
         set({ cadernetas: atualizadas });
         return nova;
       }
@@ -390,7 +501,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
           crescimento: { registros: [] },
         };
         const atualizadas = { ...cadernetas, [criancaId]: ajustada };
-        persistirCadernetas(atualizadas);
+        persistirCadernetas(get().tutorId, atualizadas);
         set({ cadernetas: atualizadas });
         return ajustada;
       }
@@ -412,7 +523,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
             crescimento: atual.crescimento,
           },
         };
-        persistirCadernetas(cadernetasAtualizadas);
+        persistirCadernetas(estadoAtual.tutorId, cadernetasAtualizadas);
         return { cadernetas: cadernetasAtualizadas };
       });
     },
@@ -431,7 +542,7 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
             crescimento: { registros: registrosAtualizados },
           },
         };
-        persistirCadernetas(cadernetasAtualizadas);
+        persistirCadernetas(estadoAtual.tutorId, cadernetasAtualizadas);
         return { cadernetas: cadernetasAtualizadas };
       });
     },
@@ -455,7 +566,31 @@ export const useCriancasStore = create<CriancasState>((set, get) => {
             crescimento: { registros: registrosOrdenados },
           },
         };
-        persistirCadernetas(cadernetasAtualizadas);
+        persistirCadernetas(estadoAtual.tutorId, cadernetasAtualizadas);
+        return { cadernetas: cadernetasAtualizadas };
+      });
+    },
+    removerCrescimento: (criancaId, registroAlvo) => {
+      set((estadoAtual) => {
+        const atual = estadoAtual.cadernetas[criancaId];
+        if (!atual) {
+          return estadoAtual;
+        }
+        const registros = [...atual.crescimento.registros];
+        const index = registros.findIndex((item) => registrosCrescimentoIguais(item, registroAlvo));
+        if (index === -1) {
+          return estadoAtual;
+        }
+        registros.splice(index, 1);
+        const registrosOrdenados = ordenarCrescimento(registros);
+        const cadernetasAtualizadas = {
+          ...estadoAtual.cadernetas,
+          [criancaId]: {
+            ...atual,
+            crescimento: { registros: registrosOrdenados },
+          },
+        };
+        persistirCadernetas(estadoAtual.tutorId, cadernetasAtualizadas);
         return { cadernetas: cadernetasAtualizadas };
       });
     },

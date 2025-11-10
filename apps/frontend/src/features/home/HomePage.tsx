@@ -1,11 +1,10 @@
 import { useMemo } from 'react';
-import { ArrowRightCircle, Bell, Pill, Stethoscope, CalendarCheck, UsersRound, IdCard, Syringe } from 'lucide-react';
+import { ArrowRightCircle, ArrowLeftRight, Bell, Pill, Stethoscope, CalendarCheck, UsersRound, IdCard, Syringe } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { BigCard } from '../../components/BigCard';
 import { Button } from '../../components/ui/button';
 import { useEasyMode } from '../../core/hooks/useEasyMode';
-import { QuickStats } from './QuickStats';
 import { useCriancasStore } from '../criancas/store';
 
 export function HomePage() {
@@ -73,6 +72,12 @@ export function HomePage() {
       description: t('home.cards.alerts.description'),
       icon: <Bell className="h-8 w-8" aria-hidden />,
     },
+    {
+      to: '/',
+      title: 'Voltar ao inicio',
+      description: 'Retorne rapidamente para o painel principal.',
+      icon: <ArrowLeftRight className="h-8 w-8" aria-hidden />,
+    },
   ];
 
   return (
@@ -132,8 +137,6 @@ export function HomePage() {
           <BigCard key={`${card.to}-${index}`} {...card} icon={icon} />
         ))}
       </div>
-
-      <QuickStats />
     </section>
   );
 }
