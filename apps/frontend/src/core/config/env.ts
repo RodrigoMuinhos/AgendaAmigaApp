@@ -19,7 +19,7 @@ const apiWsPath =
 const logoutRedirect =
   (import.meta.env.VITE_LOGOUT_URL ?? '/login').trim() || '/login';
 
-const authDisabledRaw = String(import.meta.env.VITE_AUTH_DISABLED ?? 'true')
+const authDisabledRaw = String(import.meta.env.VITE_AUTH_DISABLED ?? '')
   .trim()
   .toLowerCase();
 const authDisabled = authDisabledRaw === 'true' || authDisabledRaw === '1';
