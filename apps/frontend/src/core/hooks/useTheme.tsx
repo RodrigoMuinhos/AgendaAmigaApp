@@ -33,9 +33,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     if (stored === 'light' || stored === 'dark') {
       return stored;
     }
-    const prefersDark =
-      window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return prefersDark ? 'dark' : 'light';
+    return 'light';
   });
 
   useEffect(() => {
