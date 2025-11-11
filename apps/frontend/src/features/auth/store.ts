@@ -64,8 +64,12 @@ function matchesAdminCredential(payload: LoginPayload) {
   );
 }
 
-function isLocalToken(token: string) {
-  return token === ADMIN_TEST_TOKEN || token === OFFLINE_TOKEN;
+function isDemoToken(token: string) {
+  return token === OFFLINE_TOKEN;
+}
+
+function isAdminToken(token: string) {
+  return token === ADMIN_TEST_TOKEN;
 }
 
 function persistSession(token: string, user: AuthUser) {
@@ -111,6 +115,18 @@ export const useAuthStore = create<AuthState>((set, get) => {
     criancasStore.reset();
   };
 
+  const setUnauthenticatedState = () => {
+    resetCriancasData();
+    setAuthToken(null);
+    set({
+      status: 'unauthenticated',
+      user: undefined,
+      token: undefined,
+      authenticating: false,
+      error: undefined,
+    });
+  };
+
   const applyLocalSession = (user: AuthUser, token: string) => {
     persistSession(token, user);
     setAuthToken(token);
@@ -152,13 +168,17 @@ export const useAuthStore = create<AuthState>((set, get) => {
       const existing = readSession();
 
       if (!existing) {
-        resetCriancasData();
-        setAuthToken(null);
-        set({ status: 'unauthenticated', user: undefined, token: undefined });
+        setUnauthenticatedState();
         return;
       }
 
-      if (isLocalToken(existing.token)) {
+      if (isDemoToken(existing.token)) {
+        clearSession();
+        setUnauthenticatedState();
+        return;
+      }
+
+      if (isAdminToken(existing.token)) {
         applyLocalSession(existing.user, existing.token);
         return;
       }
@@ -299,15 +319,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
         return;
       }
       clearSession();
-      setAuthToken(null);
-      resetCriancasData();
-      set({
-        status: 'unauthenticated',
-        user: undefined,
-        token: undefined,
-        authenticating: false,
-        error: undefined,
-      });
+      setUnauthenticatedState();
     },
     clearError() {
       if (get().error) {
