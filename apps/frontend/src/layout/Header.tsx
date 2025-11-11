@@ -47,6 +47,10 @@ export function Header() {
   const handleLogout = () => {
     setMenuOpen(false);
     logout();
+    if (env.authDisabled) {
+      navigate('/inicio', { replace: true });
+      return;
+    }
     if (env.logoutRedirect) {
       navigate(env.logoutRedirect, { replace: true });
     } else {
@@ -141,18 +145,20 @@ export function Header() {
                       </span>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="group flex flex-col items-center gap-2 rounded-[26px] border border-[rgba(var(--color-border),0.2)] bg-[rgb(var(--color-surface))] px-3 py-4 text-[rgba(var(--color-text),0.75)] shadow-soft transition hover:border-[rgba(var(--color-primary),0.45)] hover:bg-[rgba(var(--color-primary),0.12)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(30,136,229,0.35)]"
-                    >
-                      <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[rgba(var(--color-border),0.2)] bg-[rgba(var(--color-primary),0.12)] text-[rgb(var(--color-primary))] shadow-soft transition group-hover:border-[rgba(var(--color-primary),0.45)] group-hover:bg-[rgba(var(--color-primary),0.18)]">
-                        <LogOut className="h-5 w-5" aria-hidden />
-                      </span>
-                      <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[rgba(var(--color-text),0.6)]">
-                        {t('app.logout', 'Logout')}
-                      </span>
-                    </button>
+                    {!env.authDisabled ? (
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="group flex flex-col items-center gap-2 rounded-[26px] border border-[rgba(var(--color-border),0.2)] bg-[rgb(var(--color-surface))] px-3 py-4 text-[rgba(var(--color-text),0.75)] shadow-soft transition hover:border-[rgba(var(--color-primary),0.45)] hover:bg-[rgba(var(--color-primary),0.12)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(30,136,229,0.35)]"
+                      >
+                        <span className="flex h-14 w-14 items-center justify-center rounded-full border border-[rgba(var(--color-border),0.2)] bg-[rgba(var(--color-primary),0.12)] text-[rgb(var(--color-primary))] shadow-soft transition group-hover:border-[rgba(var(--color-primary),0.45)] group-hover:bg-[rgba(var(--color-primary),0.18)]">
+                          <LogOut className="h-5 w-5" aria-hidden />
+                        </span>
+                        <span className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[rgba(var(--color-text),0.6)]">
+                          {t('app.logout', 'Logout')}
+                        </span>
+                      </button>
+                    ) : null}
                   </div>
 
                   <div className="mt-5 space-y-4 rounded-[26px] border border-[rgba(var(--color-border),0.18)] bg-[rgb(var(--color-surface))] p-4 shadow-soft">

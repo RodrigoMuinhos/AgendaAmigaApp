@@ -5,6 +5,7 @@ import { Footer } from './Footer';
 import { Header } from './Header';
 import { NavRail } from './NavRail';
 import { useAuthStore } from '../features/auth/store';
+import { env } from '../core/config/env';
 
 export function AppShell() {
   const { t } = useTranslation();
@@ -26,7 +27,7 @@ export function AppShell() {
     );
   }
 
-  if (status === 'unauthenticated') {
+  if (!env.authDisabled && status === 'unauthenticated') {
     return <Navigate to="/login" replace />;
   }
 
@@ -39,6 +40,16 @@ export function AppShell() {
         {t('app.skipToContent')}
       </a>
       <Header />
+      {env.authDisabled ? (
+        <div className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-8">
+          <div className="rounded-3xl border border-dashed border-[rgba(var(--color-primary),0.35)] bg-[rgba(var(--color-primary),0.08)] px-4 py-3 text-sm font-semibold text-[rgb(var(--color-primary))] shadow-soft sm:text-base">
+            {t(
+              'app.demoModeNotice',
+              'Modo teste liberado. Voce esta navegando sem login para experimentar a Agenda Amiga.',
+            )}
+          </div>
+        </div>
+      ) : null}
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 pb-24 pt-6 sm:px-8 lg:flex-row">
         <NavRail />
         <main id="main-content" className="flex-1 space-y-10">

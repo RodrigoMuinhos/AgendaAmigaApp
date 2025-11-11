@@ -20,11 +20,12 @@ import { LoginPage } from '../pages/Login';
 import { LoginSuccessPage } from '../pages/LoginSuccess';
 import { NotFoundPage } from '../pages/NotFound';
 import DebugApi from '../pages/DebugApi';
+import { env } from '../core/config/env';
 
 export const router = createBrowserRouter([
   {
     path: '/login',
-    element: <LoginPage />,
+    element: env.authDisabled ? <Navigate to="/inicio" replace /> : <LoginPage />,
   },
   {
     path: '/login-success',

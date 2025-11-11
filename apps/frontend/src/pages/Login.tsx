@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { cn } from '../utils/cn';
 import { useAuthStore } from '../features/auth/store';
+import { env } from '../core/config/env';
 
 type Mode = 'login' | 'register';
 
@@ -55,6 +56,32 @@ export function LoginPage() {
     setFormError(undefined);
     clearAuthError();
   }, [mode, clearAuthError]);
+
+  if (env.authDisabled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[rgb(var(--color-bg))] via-[rgba(var(--color-primary),0.12)] to-[rgb(var(--color-bg))] text-[rgb(var(--color-text))]">
+        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12 sm:px-10">
+          <div className="rounded-3xl border border-dashed border-[rgba(var(--color-primary),0.35)] bg-[rgba(var(--color-surface),0.95)] p-8 text-center shadow-soft">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[rgba(var(--color-text),0.6)]">
+              {t('login.disabled.badge', 'Modo teste livre')}
+            </p>
+            <h1 className="mt-4 text-3xl font-semibold text-[rgb(var(--color-primary))]">
+              {t('login.disabled.title', 'Login temporariamente desativado')}
+            </h1>
+            <p className="mt-4 text-sm leading-relaxed text-[rgba(var(--color-text),0.75)]">
+              {t(
+                'login.disabled.description',
+                'Liberamos o acesso direto ao painel para voce experimentar a Agenda Amiga sem criar conta.',
+              )}
+            </p>
+            <Button asChild className="mt-6 w-full">
+              <Link to="/inicio">{t('login.disabled.goHome', 'Ir para o painel')}</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const formatCpf = useMemo(
     () => (value: string) => {
@@ -300,5 +327,4 @@ export function LoginPage() {
     </div>
   );
 }
-
 

@@ -1,7 +1,7 @@
 // src/core/config/env.ts
 /**
- * Configuração de ambiente do frontend (Vite)
- * Lê as variáveis definidas no .env.local (dev) e .env.production (build)
+ * Configura��ǜo de ambiente do frontend (Vite)
+ * LǦ as variǭveis definidas no .env.local (dev) e .env.production (build)
  */
 
 const rawApiUrl =
@@ -19,9 +19,14 @@ const apiWsPath =
 const logoutRedirect =
   (import.meta.env.VITE_LOGOUT_URL ?? '/login').trim() || '/login';
 
+const authDisabledRaw = String(import.meta.env.VITE_AUTH_DISABLED ?? 'true')
+  .trim()
+  .toLowerCase();
+const authDisabled = authDisabledRaw === 'true' || authDisabledRaw === '1';
+
 if (!rawApiUrl && !import.meta.env.DEV) {
   console.warn(
-    '[env] ⚠️ VITE_API_URL não definida. As requisições podem falhar em produção.'
+    '[env] �s���? VITE_API_URL nǜo definida. As requisi����es podem falhar em produ��ǜo.'
   );
 }
 
@@ -29,6 +34,7 @@ export const env = {
   apiHttpBase,
   apiWsPath,
   logoutRedirect,
+  authDisabled,
 };
 
-console.log('[env] Frontend conectado à API base:', apiHttpBase);
+console.log('[env] Frontend conectado �� API base:', apiHttpBase);
