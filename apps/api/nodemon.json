@@ -1,6 +1,7 @@
 {
   "watch": ["src", "../../packages/shared/dist"],
   "ext": "ts,js,json",
-  "signal": "SIGINT",
+  "ignore": ["node_modules", "dist", "../../packages/shared/src"],
+  "legacyWatch": true,
   "delay": "200"
 }
