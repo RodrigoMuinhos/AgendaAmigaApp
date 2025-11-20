@@ -1,5 +1,6 @@
-export const API_BASE =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, '') || '';
+import { env } from '../core/config/env';
+
+export const API_BASE = env.apiHttpBase;
 
 export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
   const url = API_BASE ? `${API_BASE}${path}` : path;

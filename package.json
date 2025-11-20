@@ -38,10 +38,6 @@
     "render:build": "npm run render:build -w @agenda-amiga/api",
     "render:start": "npm run render:start -w @agenda-amiga/api",
 
-    "// ====== DOCKER (conveniência) ======": "",
-    "docker:build": "docker build -t agendaamiga-api:latest .",
-    "docker:run": "docker run --rm -p 3000:3000 --env-file ./.env.docker agendaamiga-api:latest",
-
     "// ====== UTIL ======": "",
     "clean": "npx rimraf node_modules packages/**/dist apps/**/dist package-lock.json",
     "versions": "node -v && npm -v",

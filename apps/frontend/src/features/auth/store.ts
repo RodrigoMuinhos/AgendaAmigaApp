@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { create } from 'zustand';
 import { loginUser, registerUser, fetchCurrentUser, type AuthUser, type LoginPayload, type RegisterPayload } from '../../services/auth';
 import { setAuthToken } from '../../services/api';
@@ -101,6 +102,22 @@ function readSession():
 function clearSession() {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(AUTH_STORAGE_KEY);
+}
+
+function resolveAuthErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    const payload = error.response?.data;
+    if (payload && typeof payload === 'object' && 'message' in payload && typeof (payload as any).message === 'string') {
+      return (payload as any).message;
+    }
+    if (error.message) {
+      return error.message;
+    }
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return fallback;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => {
@@ -238,7 +255,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
         console.error('[auth] login failed', error);
         set({
           authenticating: false,
-          error: 'Nao foi possivel entrar. Verifique suas credenciais.',
+          error: resolveAuthErrorMessage(
+            error,
+            'Nao foi possivel entrar. Verifique suas credenciais.',
+          ),
           status: 'unauthenticated',
         });
         setAuthToken(null);
@@ -252,15 +272,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
         return true;
       }
       try {
-        const response = await registerUser(payload);
-        setAuthToken(response.token);
-        persistSession(response.token, response.user);
-        syncTutor(response.user.id);
+        await registerUser(payload);
         set({
-          status: 'authenticated',
-          user: response.user,
-          token: response.token,
           authenticating: false,
+          status: 'unauthenticated',
           error: undefined,
         });
         return true;
@@ -268,7 +283,10 @@ export const useAuthStore = create<AuthState>((set, get) => {
         console.error('[auth] register failed', error);
         set({
           authenticating: false,
-          error: 'Nao foi possivel concluir o cadastro. Tente novamente.',
+          error: resolveAuthErrorMessage(
+            error,
+            'Nao foi possivel concluir o cadastro. Tente novamente.',
+          ),
           status: 'unauthenticated',
         });
         setAuthToken(null);

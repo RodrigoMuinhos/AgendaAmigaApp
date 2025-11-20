@@ -1,4 +1,4 @@
-﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, LogIn, User, UserPlus } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -17,6 +17,8 @@ export function LoginPage() {
   const [searchParams] = useSearchParams();
   const [formError, setFormError] = useState<string | undefined>(undefined);
   const [cpfInput, setCpfInput] = useState('');
+  const [formSuccess, setFormSuccess] = useState<string | undefined>(undefined);
+  const successModeSwitchRef = useRef(false);
 
   const status = useAuthStore((state) => state.status);
   const initialize = useAuthStore((state) => state.initialize);
@@ -55,6 +57,11 @@ export function LoginPage() {
   useEffect(() => {
     setFormError(undefined);
     clearAuthError();
+    if (successModeSwitchRef.current) {
+      successModeSwitchRef.current = false;
+    } else {
+      setFormSuccess(undefined);
+    }
   }, [mode, clearAuthError]);
 
   if (env.authDisabled) {
@@ -99,15 +106,20 @@ export function LoginPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError(undefined);
+    setFormSuccess(undefined);
 
     const data = new FormData(event.currentTarget);
     const nome = String(data.get('name') ?? '').trim();
     const senha = String(data.get('password') ?? '');
     const cpfRaw = String(data.get('cpf') ?? '').trim();
     const cpfDigits = cpfRaw.replace(/\D/g, '');
+    const email = String(data.get('email') ?? '').trim();
 
-    if (!cpfDigits || !senha) {
-      setFormError(t('login.validation.missingCredentials', 'Informe CPF e senha.'));
+    if (!cpfDigits || (isLogin && !senha)) {
+      const message = isLogin
+        ? t('login.validation.missingCredentials', 'Informe CPF e senha.')
+        : t('login.validation.missingCpf', 'Informe o CPF para continuar.');
+      setFormError(message);
       return;
     }
 
@@ -129,21 +141,27 @@ export function LoginPage() {
       return;
     }
 
-    if (senha.length < 6) {
-      setFormError(
-        t('login.validation.passwordLength', 'A senha precisa ter pelo menos 6 caracteres.'),
-      );
+    if (!email.length) {
+      setFormError(t('login.validation.email', 'Informe um email valido para receber a senha.'));
       return;
     }
 
     const success = await registerAccount({
       nome,
-      senha,
       cpf: cpfDigits,
+      email,
     });
 
     if (success) {
-      navigate('/inicio', { replace: true });
+      const successMessage = t(
+        'login.register.success',
+        'Email enviado com sucesso. Verifique sua caixa de entrada.',
+      );
+      setFormSuccess(successMessage);
+      successModeSwitchRef.current = true;
+      setMode('login');
+      setCpfInput('');
+      return;
     }
   };
 
@@ -175,6 +193,11 @@ export function LoginPage() {
           {formError ? (
             <div className="mb-4 rounded-3xl border border-[rgba(var(--color-border),0.35)] bg-[rgba(239,68,68,0.08)] px-4 py-3 text-sm text-[rgb(220,38,38)]">
               {formError}
+            </div>
+          ) : null}
+          {formSuccess ? (
+            <div className="mb-4 rounded-3xl border border-lime-200 bg-lime-50 px-4 py-3 text-sm text-lime-700">
+              {formSuccess}
             </div>
           ) : null}
 
@@ -209,19 +232,34 @@ export function LoginPage() {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             {!isLogin ? (
-              <div>
-                <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.15em] text-[rgba(var(--color-text),0.7)]">
-                  {t('login.fullName', 'Nome completo')}
-                </label>
-                <Input
-                  type="text"
-                  name="name"
-                  placeholder={t('login.fullNamePlaceholder', 'Como devemos chamar voce?')}
-                  required
-                  disabled={authenticating}
-                  autoComplete="name"
-                />
-              </div>
+              <>
+                <div>
+                  <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.15em] text-[rgba(var(--color-text),0.7)]">
+                    {t('login.fullName', 'Nome completo')}
+                  </label>
+                  <Input
+                    type="text"
+                    name="name"
+                    placeholder={t('login.fullNamePlaceholder', 'Como devemos chamar voce?')}
+                    required
+                    disabled={authenticating}
+                    autoComplete="name"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.15em] text-[rgba(var(--color-text),0.7)]">
+                    {t('login.email', 'E-mail')}
+                  </label>
+                  <Input
+                    type="email"
+                    name="email"
+                    placeholder={t('login.emailPlaceholder', 'seu@email.com')}
+                    required
+                    disabled={authenticating}
+                    autoComplete="email"
+                  />
+                </div>
+              </>
             ) : null}
 
             <div>
@@ -241,20 +279,21 @@ export function LoginPage() {
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.15em] text-[rgba(var(--color-text),0.7)]">
-                {t('login.password', 'Senha')}
-              </label>
-              <Input
-                type="password"
-                name="password"
-                placeholder={t('login.passwordPlaceholder', 'Digite sua senha')}
-                minLength={isLogin ? undefined : 6}
-                required
-                disabled={authenticating}
-                autoComplete={isLogin ? 'current-password' : 'new-password'}
-              />
-            </div>
+            {isLogin ? (
+              <div>
+                <label className="mb-2 block text-sm font-semibold uppercase tracking-[0.15em] text-[rgba(var(--color-text),0.7)]">
+                  {t('login.password', 'Senha')}
+                </label>
+                <Input
+                  type="password"
+                  name="password"
+                  placeholder={t('login.passwordPlaceholder', 'Digite sua senha')}
+                  required
+                  disabled={authenticating}
+                  autoComplete="current-password"
+                />
+              </div>
+            ) : null}
 
             {isLogin ? (
               <div className="flex justify-end">
@@ -327,4 +366,3 @@ export function LoginPage() {
     </div>
   );
 }
-

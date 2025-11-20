@@ -24,7 +24,7 @@ async function safeRequest<T>(request: () => Promise<T>, fallback: T): Promise<T
   try {
     return await request();
   } catch (error) {
-    if (import.meta.env.DEV) {
+    if (process.env.NODE_ENV === 'development') {
       // eslint-disable-next-line no-console
       console.warn('[api] fallback triggered for request', error);
     }

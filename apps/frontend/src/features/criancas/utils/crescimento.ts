@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import dayjs from 'dayjs';
 import type { Crianca, CrescimentoRegistro } from '../types';
 import { calcularIdadeEmMeses } from './idade';
 import {

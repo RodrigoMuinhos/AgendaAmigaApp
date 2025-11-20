@@ -1,69 +1,48 @@
 # Agenda Amiga
 
-Monorepo que agrupa a API Express e o pacote compartilhado de dominio usados pelo projeto Agenda Amiga.
+Monorepo que reúne a API em Spring Boot, o pacote compartilhado de domínio e o front-end em Next.js (Pages Router) da Agenda Amiga.
 
 ## Requisitos locais
-- Node.js 18+
-- npm 9+
-- Docker e Docker Compose (para os cenarios descritos abaixo)
+- Node.js 20+
+- npm 11+
+- Java 21 (JDK completa)
+- Maven 3.9+
 
 ## Estrutura do monorepo
-- `packages/shared`: dominio e contratos em TypeScript
-- `apps/api`: API HTTP Express em Node.js
-- `apps/frontend`: front-end demonstrativo (React/Vite)
+- `packages/shared`: domínios e contratos TypeScript usados em backend e frontend.
+- `apps/api-spring`: nova API em Java + Spring Boot que consome Neon/Postgres.
+- `apps/frontend`: front-end em Next.js que reutiliza os serviços e o layout existentes (pages router).
 
-## Scripts principais
-- `npm run build` compila `@agenda-amiga/shared` e, em seguida, `@agenda-amiga/api`
-- `npm run dev:api` roda a API em modo desenvolvimento com hot reload (nodemon + ts-node)
-- `npm run start:api` executa a API a partir do build gerado em `apps/api/dist`
+## Rodando localmente
 
-## Desenvolvimento com Docker
-1. Construa e inicie o container de desenvolvimento (hot reload + volumes):
+### Backend Spring Boot
+1. Configure as variáveis disponíveis em `.env` (já aponta para o Neon e inclui os `NEXT_PUBLIC_*`).
+2. Inicie o backend:
    ```bash
-   docker compose -f docker-compose.dev.yml up --build
+   cd apps/api-spring
+   mvn spring-boot:run
    ```
-2. O `nodemon` dentro do container observa `apps/api/src` e `packages/shared/src`. Alteracoes reiniciam a API automaticamente.
-3. O volume nomeado preserva os `node_modules` dentro do container, evitando re-instalacoes a cada rebuild.
-4. O servidor respondera em `http://127.0.0.1:3000`.
-
-## Execucao para producao local
-1. Gere a imagem pronta para producao:
+   O servidor responde em `http://localhost:3001` (lembre de manter o Next na porta 3000 e apontar os `NEXT_PUBLIC_*` para essa URL).
+3. Para gerar o jar pronto:
    ```bash
-   docker compose build
-   ```
-2. Suba o container utilizando o target `production` do Dockerfile multi-stage:
-   ```bash
-   docker compose up -d
-   ```
-3. Para atualizar a imagem no Docker Hub manualmente:
-   ```bash
-   docker build --target production -t docker.io/<seu_usuario>/agenda-amiga:latest .
-   docker push docker.io/<seu_usuario>/agenda-amiga:latest
+   mvn -f apps/api-spring/pom.xml -DskipTests package
    ```
 
-## CI/CD com GitHub Actions
-O workflow `Build and Push Docker Image` (`.github/workflows/docker-build.yml`) executa em pushes para `main`:
-- Efetua checkout do repositorio
-- Configura Docker Buildx com cache `type=gha`
-- Realiza login no Docker Hub usando `secrets.DOCKERHUB_USERNAME` e `secrets.DOCKERHUB_TOKEN`
-- Gera a imagem a partir do target `production`
-- Publica as tags `latest` e o SHA do commit (`docker.io/<usuario>/agenda-amiga:<sha>`)
+### Frontend
+1. Instale as dependências e rode o Next.js:
+   ```bash
+   cd apps/frontend
+   npm install
+   npm run dev
+   ```
+   O frontend estará em `http://localhost:3000` e usa `NEXT_PUBLIC_API_URL` para conversar com o backend e ativar os mocks em desenvolvimento.
 
-## Variaveis de ambiente relevantes
-A API utiliza variaveis carregadas via `dotenv`. Ajuste um arquivo `.env` (ou injete pelo Compose) com as chaves esperadas em `apps/api/src/config`.
+### Camada compartilhada
+- Sempre rode `npm run shared:build` (ou `npm run build`) antes de testar o frontend ou o backend que depende de `packages/shared`.
 
-## Fluxo manual sem Docker
-1. Instale dependencias: `npm install`
-2. Construa shared + api: `npm run build`
-3. Rode a API: `npm run start:api`
-4. Para desenvolvimento continuo: `npm run dev:api`
+## Variáveis de ambiente
+O `.env` na raiz define o `DATABASE_URL`, a `JWT_SECRET` local e todos os `NEXT_PUBLIC_*` necessários ao frontend (API base, logout e flags). Você pode adaptá-lo para outros ambientes, mas preserve `AUTH_PASSWORD_RESET_TTL`, `FRONTEND_ORIGIN` e `NEXT_PUBLIC_AUTH_DISABLED`.
 
-## Dominios e casos de uso disponiveis
-A camada compartilhada exposta em `@agenda-amiga/shared` inclui:
-- Value Objects: `Email`, `SenhaHash`, `NumeroCarteirinha`, `DoseHorario`, `UnidadeDosagem`, `Periodo`, `TokenShare`, `Adesao`
-- Entidades/Aggregates: `Paciente`, `PlanoSaude`, `Medicamento`, `EsquemaDose`, `DoseLog`, `Consulta`, `Documento`, `ShareLink`
-- Events/Specifications: `DoseConfirmada`, `EsquemaDeDoseAlterado`, `ShareLinkGerado`, `ShareLinkAcessado`
-- Repositorios/Gateways: `PacienteRepository`, `MedicamentoRepository`, `DoseLogRepository`, `ConsultaRepository`, `DocumentoRepository`, `ShareLinkRepository`, `Clock`
-- Casos de uso: `ListarPacientesPorTutor`, `ConfirmarTomadaDose`, `AlterarEsquemaDose`, `GerarShareLink`
-
-A API injeta essas dependencias e expoe rotas REST (ex.: `/health`, `/tutores/:tutorId/pacientes`, `/share-links`). O front-end Vite consome essas rotas para demonstrar o fluxo ponta a ponta.
+## Observações
+- Não há mais suporte a Docker no fluxo principal; as instruções acima usam apenas Maven para o backend e Next.js para o frontend.
+- A API expõe `/api/auth`, `/api/familias`, `/api/criancas`, `/api/tratamentos` e `/health`, obedecendo ao contrato consumido pelo frontend.

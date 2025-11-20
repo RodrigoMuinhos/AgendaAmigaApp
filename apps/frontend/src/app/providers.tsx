@@ -32,7 +32,7 @@ export function AppProviders({ children }: AppProvidersProps) {
             {children}
           </EasyModeProvider>
         </ThemeProvider>
-        {import.meta.env.DEV ? <ReactQueryDevtools initialIsOpen={false} /> : null}
+        {process.env.NODE_ENV === 'development' ? <ReactQueryDevtools initialIsOpen={false} /> : null}
       </QueryClientProvider>
     </I18nextProvider>
   );

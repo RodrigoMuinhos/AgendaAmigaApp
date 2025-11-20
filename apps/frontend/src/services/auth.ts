@@ -23,14 +23,38 @@ export type AuthResponse = {
 export type RegisterPayload = {
   nome: string;
   cpf: string;
-  senha: string;
-  email?: string;
+  email: string;
 };
 
 export type LoginPayload = {
   cpf?: string;
   email?: string;
   senha: string;
+};
+
+export type RecoverPasswordPayload = {
+  cpf?: string;
+  email?: string;
+};
+
+export type RecoverPasswordResponse = {
+  message: string;
+  expiresInMinutes?: number;
+  recoveryToken?: string;
+};
+
+export type ConfirmPasswordResetPayload = {
+  token: string;
+  senha: string;
+};
+
+export type TemporaryPasswordResponse = {
+  message: string;
+  temporaryPassword?: string;
+};
+
+export type TemporaryPasswordRequest = {
+  email: string;
 };
 
 export async function registerUser(payload: RegisterPayload): Promise<AuthResponse> {
@@ -46,4 +70,21 @@ export async function loginUser(payload: LoginPayload): Promise<AuthResponse> {
 export async function fetchCurrentUser(): Promise<AuthUser> {
   const { data } = await api.get<{ user: AuthUser }>(endpoints.authMe);
   return data.user;
+}
+
+export async function requestPasswordReset(
+  payload: RecoverPasswordPayload,
+): Promise<RecoverPasswordResponse> {
+  const { data } = await api.post<RecoverPasswordResponse>(endpoints.authRecover, payload);
+  return data;
+}
+
+export async function confirmPasswordReset(payload: ConfirmPasswordResetPayload): Promise<{ message: string }> {
+  const { data } = await api.post<{ message: string }>(endpoints.authRecoverConfirm, payload);
+  return data;
+}
+
+export async function requestTemporaryPassword(payload: TemporaryPasswordRequest): Promise<TemporaryPasswordResponse> {
+  const { data } = await api.post<TemporaryPasswordResponse>(endpoints.temporaryPassword, payload);
+  return data;
 }

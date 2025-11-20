@@ -1,9 +1,11 @@
 import axios from "axios";
 
+import { env } from "../core/config/env";
+
 let authToken: string | null = null;
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "/api",
+  baseURL: env.apiHttpBase || "/api",
   withCredentials: false,
 });
 

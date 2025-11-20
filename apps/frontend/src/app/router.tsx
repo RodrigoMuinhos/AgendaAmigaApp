@@ -1,4 +1,5 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import type { RouteObject } from 'react-router-dom';
+import { Navigate, createBrowserRouter } from 'react-router-dom';
 import { AlertsPage } from '../features/alerts/AlertsPage';
 import { CareFormPage } from '../features/care/CareFormPage';
 import { CareOverviewPage } from '../features/care/CareOverviewPage';
@@ -22,7 +23,7 @@ import { NotFoundPage } from '../pages/NotFound';
 import DebugApi from '../pages/DebugApi';
 import { env } from '../core/config/env';
 
-export const router = createBrowserRouter([
+export const appRoutes: RouteObject[] = [
   {
     path: '/login',
     element: env.authDisabled ? <Navigate to="/inicio" replace /> : <LoginPage />,
@@ -142,4 +143,8 @@ export const router = createBrowserRouter([
     path: '*',
     element: <NotFoundPage />,
   },
-]);
+];
+
+export function createAppRouter() {
+  return createBrowserRouter(appRoutes);
+}
