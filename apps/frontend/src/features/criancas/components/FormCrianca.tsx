@@ -154,6 +154,37 @@ function brToIsoDate(value?: string | null) {
   return iso;
 }
 
+function onlyDigits(value?: string | null) {
+  return (value ?? '').replace(/\D/g, '');
+}
+
+function isValidCpf(value?: string | null) {
+  const digits = onlyDigits(value);
+  if (digits.length !== 11) {
+    return false;
+  }
+  if (/^(\d)\1+$/.test(digits)) {
+    return false;
+  }
+
+  const verifyDigit = (length: number) => {
+    let sum = 0;
+    for (let i = 0; i < length; i += 1) {
+      const coefficient = length + 1 - i;
+      sum += Number(digits[i]) * coefficient;
+    }
+    const remainder = (sum * 10) % 11;
+    return remainder === 10 ? 0 : remainder;
+  };
+
+  const firstVerifier = verifyDigit(9);
+  if (firstVerifier !== Number(digits[9])) {
+    return false;
+  }
+  const secondVerifier = verifyDigit(10);
+  return secondVerifier === Number(digits[10]);
+}
+
 function convertTriagensToForm(triagens?: CriancaCreateInput['triagensNeonatais']) {
   if (!triagens) return {};
 
@@ -564,7 +595,16 @@ export function FormCrianca({
                 name="nascimentoISO"
                 rules={{
                   required: 'Informe a data',
-                  validate: (value) => Boolean(brToIsoDate(value)) || 'Informe uma data valida',
+                  validate: (value) => {
+                    const iso = brToIsoDate(value);
+                    if (!iso) {
+                      return 'Informe uma data valida';
+                    }
+                    if (new Date(iso).getTime() > Date.now()) {
+                      return 'Informe uma data igual ou anterior a hoje';
+                    }
+                    return true;
+                  },
                 }}
                 render={({ field }) => (
                   <MaskedInput
@@ -612,6 +652,10 @@ export function FormCrianca({
               <Controller
                 control={control}
                 name="cpf"
+                rules={{
+                  required: 'Informe o CPF',
+                  validate: (value) => (isValidCpf(value) ? true : 'Informe um CPF valido'),
+                }}
                 render={({ field }) => (
                   <MaskedInput
                     mask="999.999.999-99"
@@ -1551,4 +1595,3 @@ export function FormCrianca({
     </form>
   );
 }
-

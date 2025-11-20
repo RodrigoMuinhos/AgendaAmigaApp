@@ -6,6 +6,8 @@ import com.agendaamiga.backend.security.UserPrincipal;
 import com.agendaamiga.backend.service.ChildService;
 import jakarta.validation.Valid;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/criancas")
 public class ChildController {
+    private static final Logger log = LoggerFactory.getLogger(ChildController.class);
+
     private final ChildService childService;
 
     public ChildController(ChildService childService) {
@@ -26,6 +30,7 @@ public class ChildController {
     @GetMapping
     public ResponseEntity<List<ChildResponse>> listChildren(Authentication authentication) {
         final UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+        log.info("Listando criancas para tutor {}", principal.getId());
         return ResponseEntity.ok(childService.findByTutor(principal.getId().toString()));
     }
 
@@ -33,7 +38,9 @@ public class ChildController {
     public ResponseEntity<ChildResponse> createChild(Authentication authentication,
         @Valid @RequestBody ChildRequest request) {
         final UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+        log.info("Criando crianca para tutor {}", principal.getId());
         final ChildResponse response = childService.createChild(principal.getId().toString(), request);
+        log.info("Crianca criada {} ({}) para tutor {}", response.id(), response.nome(), principal.getId());
         return ResponseEntity.status(201).body(response);
     }
 }

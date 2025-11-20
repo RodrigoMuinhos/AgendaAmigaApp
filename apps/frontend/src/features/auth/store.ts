@@ -21,7 +21,7 @@ type AuthState = {
   clearError: () => void;
 };
 
-const AUTH_STORAGE_KEY = 'agenda-amiga:auth';
+export const AUTH_STORAGE_KEY = 'agenda-amiga:auth';
 const ADMIN_TEST_CPF = '04411750317';
 const ADMIN_PASSWORD_CANONICAL = 'rodrigo123';
 const OFFLINE_TOKEN = 'demo-offline-token';
